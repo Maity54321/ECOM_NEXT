@@ -8,6 +8,7 @@ import Pagination from "react-js-pagination";
 import Slider from "@mui/material/Slider";
 import Typography from "@mui/material/Typography";
 import Loading from "@/components/Loading/Loading";
+import { FiFilter, FiTag } from "react-icons/fi";
 
 const categories = ["All", "Mobiles", "Monitors", "Laptops"];
 
@@ -63,37 +64,67 @@ const AllProducts = () => {
       {loading ? (
         <Loading />
       ) : (
-        <div className="flex md:flex-row flex-col mb-20">
-          <div className="border border-solid border-gray-400 mt-24 md:w-64 w-full h-96 z-[1] md:block hidden">
-            <Typography align="center" variant="h6">
-              Price
-            </Typography>
-            <div className="w-5/6 ms-auto me-auto">
-              <Slider
-                value={price}
-                onChange={priceHandler}
-                valueLabelDisplay="auto"
-                aria-labelledby="range-slider"
-                min={0}
-                max={99999}
-                color="secondary"
-              />
-            </div>
+        <div className="flex md:flex-row flex-col mb-20 gap-8 px-4 md:px-8">
+          {/* Modern Sidebar */}
+          <div className="md:w-72 w-full mt-24 md:block hidden">
+            <div className="sticky top-28 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-8">
+              {/* Price Filter Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-slate-900">
+                  <FiFilter className="text-purple-600" />
+                  <h3 className="font-semibold text-lg">Price Range</h3>
+                </div>
+                <div className="px-2">
+                  <Slider
+                    value={price}
+                    onChange={priceHandler}
+                    valueLabelDisplay="auto"
+                    aria-labelledby="range-slider"
+                    min={0}
+                    max={99999}
+                    sx={{
+                      color: '#9333ea', // purple-600
+                      '& .MuiSlider-thumb': {
+                        backgroundColor: '#fff',
+                        border: '2px solid currentColor',
+                      },
+                    }}
+                  />
+                  <div className="flex justify-between text-xs font-medium text-slate-500 mt-1">
+                    <span>₹{price[0].toLocaleString()}</span>
+                    <span>₹{price[1].toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
 
-            <Typography align="center" variant="h6">
-              Categories
-            </Typography>
-            <ul>
-              {categories.map((item, index) => (
-                <li
-                  className="list-none pt-1 cursor-pointer duration-500 text-gray-500 hover:text-purple-800"
-                  key={index}
-                  onClick={() => handleCategory(item)}
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
+              <div className="h-px bg-slate-100" />
+
+              {/* Categories Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-slate-900">
+                  <FiTag className="text-purple-600" />
+                  <h3 className="font-semibold text-lg">Categories</h3>
+                </div>
+                <ul className="space-y-1">
+                  {categories.map((item, index) => {
+                    const isActive = (item === "All" && category === "") || (item === category);
+                    return (
+                      <li
+                        key={index}
+                        onClick={() => handleCategory(item)}
+                        className={`px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 text-sm font-medium ${
+                          isActive
+                            ? "bg-purple-50 text-purple-700 shadow-sm"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        {item}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
           </div>
           <div className="w-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6 mt-16 px-4">

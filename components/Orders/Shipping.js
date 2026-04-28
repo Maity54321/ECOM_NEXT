@@ -1,13 +1,21 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Input from "@/components/common/Input";
-import { BsBuildingFill, BsHouseFill, BsPhoneFill } from "react-icons/bs";
-import { MdLocationOn } from "react-icons/md";
 import { Country, State } from "country-state-city";
 import { useRouter } from "next/navigation";
 import Joi from "joi-browser";
 import { toast } from "react-toastify";
+import { 
+  FiHome, 
+  FiMapPin, 
+  FiPhone, 
+  FiTruck, 
+  FiCheckCircle, 
+  FiCreditCard,
+  FiMap,
+  FiFlag
+} from "react-icons/fi";
+import CheckoutSteps from "@/components/common/CheckoutSteps";
 
 const Shipping = () => {
   const [shippingInfo, setShippingInfo] = useState({
@@ -29,10 +37,8 @@ const Shipping = () => {
       errors.forEach((err) => {
         switch (err.type) {
           case "number.min":
-            err.message = "Pin must be at least 6 digits";
-            break;
           case "number.max":
-            err.message = "Pin must be at least 6 digits";
+            err.message = "Pin must be exactly 6 digits";
             break;
           default:
             break;
@@ -44,8 +50,6 @@ const Shipping = () => {
       errors.forEach((err) => {
         switch (err.type) {
           case "number.min":
-            err.message = "Phone number must be 10 digits";
-            break;
           case "number.max":
             err.message = "Phone number must be 10 digits";
             break;
@@ -55,133 +59,192 @@ const Shipping = () => {
       });
       return errors;
     }),
-    country: Joi.string().label("Country"),
-    state: Joi.string().label("State"),
+    country: Joi.string().required().label("Country"),
+    state: Joi.string().required().label("State"),
   };
 
   const validateProperty = ({ name, value }) => {
-    const obj = { name: value };
-    const schema = { name: shippingSchema[name] };
+    const obj = { [name]: value };
+    const schema = { [name]: shippingSchema[name] };
     const { error } = Joi.validate(obj, schema);
     return error ? error.details[0].message : null;
   };
 
   const handleChange = (e) => {
-    const errorMessage = validateProperty(e.target);
+    const { name, value } = e.target;
+    const errorMessage = validateProperty({ name, value });
+    
     if (errorMessage) {
-      setErrors({ ...errors, [e.target.name]: errorMessage });
+      setErrors({ ...errors, [name]: errorMessage });
     } else {
       const newErrors = { ...errors };
-      delete newErrors[e.target.name];
+      delete newErrors[name];
       setErrors(newErrors);
     }
-    setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
+    
+    setShippingInfo({ ...shippingInfo, [name]: value });
   };
 
   const handleContinue = (e) => {
     e.preventDefault();
-    if (country !== "") {
-      if (state === "") {
-        toast.error("Please Select your State", {
-          theme: "colored",
-          position: "bottom-center",
-        });
-      } else {
-        localStorage.setItem("shipping", JSON.stringify(shippingInfo));
-        router.push("/order/confirm");
-      }
-    } else {
-      toast.error("Please Choose Your Country", {
-        theme: "colored",
-        position: "bottom-center",
+    
+    const result = Joi.validate(shippingInfo, shippingSchema, { abortEarly: false });
+    if (result.error) {
+      const newErrors = {};
+      result.error.details.forEach(detail => {
+        newErrors[detail.path[0]] = detail.message;
       });
+      setErrors(newErrors);
+      toast.error("Please fill all details correctly", { theme: "colored" });
+      return;
     }
+
+    localStorage.setItem("shipping", JSON.stringify(shippingInfo));
+    router.push("/order/confirm");
   };
 
   useEffect(() => {
     if (!localStorage.getItem("token")) {
       router.push("/account");
     }
-  });
-
-  const renderInput = (name, type, placeholder) => {
-    return (
-      <Input
-        name={name}
-        placeholder={placeholder}
-        type={type}
-        value={shippingInfo[name]}
-        onChange={handleChange}
-        error={errors[name]}
-      />
-    );
-  };
+  }, [router]);
 
   return (
-    <>
-      <div className="flex flex-row justify-center items-center w-full min-h-full">
-        <form
-          action=""
-          className="border border-solid w-96 bg-purple-800 mt-10 rounded-2xl"
-          onSubmit={handleContinue}
-        >
-          <div className="flex flex-col items-center justify-evenly w-full min-h-[500px]">
-            <div className="flex flex-row items-center w-full">
-              <BsHouseFill className="text-black absolute text-2xl ms-12" />
-              {renderInput("address", "text", "Address")}
+    <div className="min-h-screen bg-slate-50/50 py-12 px-4 sm:px-6 lg:px-8 mt-16">
+      <div className="max-w-xl mx-auto">
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+          <div className="p-8 sm:p-12">
+            <CheckoutSteps activeStep={0} />
+
+            <div className="mb-10 text-center mt-6">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Shipping Details</h1>
+              <p className="mt-2 text-sm text-slate-500">Please enter your accurate delivery information</p>
             </div>
-            <div className="flex flex-row items-center w-full">
-              <BsBuildingFill className="text-black absolute text-2xl ms-12" />
-              {renderInput("city", "text", "City")}
-            </div>
-            <div className="flex flex-row items-center w-full">
-              <MdLocationOn className="text-black absolute text-2xl ms-12" />
-              {renderInput("pinCode", "text", "Pin Code")}
-            </div>
-            <div className="flex flex-row items-center w-full">
-              <BsPhoneFill className="text-black absolute text-2xl ms-12" />
-              {renderInput("phone", "text", "Phone")}
-            </div>
-            <select
-              name="country"
-              className="p-3 ps-10 w-2/3 rounded-lg border-none outline-none font-cursive text-black text-lg shadow-black shadow-md"
-              value={country}
-              onChange={handleChange}
-            >
-              <option value="">Country</option>
-              {Country &&
-                Country.getAllCountries().map((item) => (
-                  <option value={item.isoCode} key={item.isoCode}>
-                    {item.name}
-                  </option>
-                ))}
-            </select>
-            {Country && (
-              <select
-                name="state"
-                className="p-3 ps-10 w-2/3 rounded-lg border-none outline-none font-cursive text-black text-lg shadow-black shadow-md"
-                value={state}
-                onChange={handleChange}
-              >
-                <option value="">State</option>
-                {State &&
-                  State.getStatesOfCountry(country).map((item) => (
-                    <option value={item.isoCode} key={item.isoCode}>
-                      {item.name}
-                    </option>
+
+            <form onSubmit={handleContinue} className="space-y-6">
+              {/* Address Input */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                  <FiHome size={18} />
+                </div>
+                <input
+                  type="text"
+                  name="address"
+                  placeholder="Street Address"
+                  className={`block w-full pl-11 pr-4 py-3.5 bg-slate-50 border ${errors.address ? 'border-red-500 focus:ring-red-200' : 'border-slate-200 focus:ring-purple-200'} rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:border-purple-600 transition-all`}
+                  value={address}
+                  onChange={handleChange}
+                />
+                {errors.address && <p className="mt-1.5 text-xs text-red-500 font-medium ml-2">{errors.address}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* City Input */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <FiMapPin size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    name="city"
+                    placeholder="City"
+                    className={`block w-full pl-11 pr-4 py-3.5 bg-slate-50 border ${errors.city ? 'border-red-500' : 'border-slate-200'} rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-600 transition-all`}
+                    value={city}
+                    onChange={handleChange}
+                  />
+                  {errors.city && <p className="mt-1.5 text-xs text-red-500 font-medium ml-2">{errors.city}</p>}
+                </div>
+
+                {/* Pin Code Input */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <FiMap size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    name="pinCode"
+                    placeholder="Pin Code"
+                    className={`block w-full pl-11 pr-4 py-3.5 bg-slate-50 border ${errors.pinCode ? 'border-red-500' : 'border-slate-200'} rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-600 transition-all`}
+                    value={pinCode}
+                    onChange={handleChange}
+                  />
+                  {errors.pinCode && <p className="mt-1.5 text-xs text-red-500 font-medium ml-2">{errors.pinCode}</p>}
+                </div>
+              </div>
+
+              {/* Phone Input */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                  <FiPhone size={18} />
+                </div>
+                <input
+                  type="text"
+                  name="phone"
+                  placeholder="Phone Number"
+                  className={`block w-full pl-11 pr-4 py-3.5 bg-slate-50 border ${errors.phone ? 'border-red-500' : 'border-slate-200'} rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-600 transition-all`}
+                  value={phone}
+                  onChange={handleChange}
+                />
+                {errors.phone && <p className="mt-1.5 text-xs text-red-500 font-medium ml-2">{errors.phone}</p>}
+              </div>
+
+              {/* Country Selection */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                  <FiFlag size={18} />
+                </div>
+                <select
+                  name="country"
+                  className={`block w-full pl-11 pr-10 py-3.5 bg-slate-50 border ${errors.country ? 'border-red-500' : 'border-slate-200'} rounded-xl text-slate-900 appearance-none focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-600 transition-all`}
+                  value={country}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Country</option>
+                  {Country.getAllCountries().map((item) => (
+                    <option value={item.isoCode} key={item.isoCode}>{item.name}</option>
                   ))}
-              </select>
-            )}
-            <button
-              className="p-2 ms-auto me-auto w-1/2 rounded-lg border-none mt-5 cursor-pointer text-lg font-cursive hover:text-purple-800 text-purple-800 shadow-black shadow-md"
-              type="submit"
-            >
-              Continue
-            </button>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                </div>
+                {errors.country && <p className="mt-1.5 text-xs text-red-500 font-medium ml-2">{errors.country}</p>}
+              </div>
+
+              {/* State Selection */}
+              {country && (
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <FiMap size={18} />
+                  </div>
+                  <select
+                    name="state"
+                    className={`block w-full pl-11 pr-10 py-3.5 bg-slate-50 border ${errors.state ? 'border-red-500' : 'border-slate-200'} rounded-xl text-slate-900 appearance-none focus:outline-none focus:ring-4 focus:ring-purple-200 focus:border-purple-600 transition-all`}
+                    value={state}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select State</option>
+                    {State.getStatesOfCountry(country).map((item) => (
+                      <option value={item.isoCode} key={item.isoCode}>{item.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                  </div>
+                  {errors.state && <p className="mt-1.5 text-xs text-red-500 font-medium ml-2">{errors.state}</p>}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-200 hover:shadow-purple-300 transition-all transform hover:-translate-y-0.5 mt-4"
+              >
+                Continue to Order Confirmation
+              </button>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
