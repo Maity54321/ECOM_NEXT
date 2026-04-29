@@ -7,8 +7,16 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createCart } from "@/services/cartService";
 import Loading from "@/components/Loading/Loading";
-import { BiCartAdd } from "react-icons/bi";
-import { AiTwotoneThunderbolt } from "react-icons/ai";
+import { 
+  FaCartPlus, 
+  FaBolt, 
+  FaMinus, 
+  FaPlus, 
+  FaShieldAlt, 
+  FaTruck, 
+  FaRedoAlt 
+} from "react-icons/fa";
+import { HiOutlineBadgeCheck } from "react-icons/hi";
 
 const ReactStars = dynamic(() => import("react-rating-stars-component"), {
   ssr: false,
@@ -38,23 +46,28 @@ function ParticularProduct() {
   const handleRating = (val) => {
     const options = {
       edit: false,
-      color: "rgba(30,30,30,0.5)",
-      activeColor: "Purple",
-      size: typeof window !== "undefined" && window.innerWidth > 650 ? 25 : 20,
-      value: val,
+      color: "rgba(30,30,30,0.2)",
+      activeColor: "#6E35AE",
+      size: typeof window !== "undefined" && window.innerWidth > 650 ? 24 : 20,
+      value: val || 0,
       isHalf: true,
     };
     return options;
   };
 
-  const cart = {
-    product: product._id,
-    quantity: quantity,
-    price: product.price,
+  const addToCart = async () => {
+    const cart = {
+      product: product._id,
+      quantity: quantity,
+      price: product.price,
+    };
+    await createCart(cart);
+    router.push("/cart");
   };
 
-  const addToCart = async () => {
-    const res = await createCart(cart);
+  const handleBuyNow = () => {
+    addToCart();
+    router.push("/shipping");
   };
 
   const increaseQuantity = () => {
@@ -69,107 +82,146 @@ function ParticularProduct() {
     }
   };
 
-  const handleBuyNow = () => {
-    router.push("/shipping");
-  };
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full justify-center items-center bg-gray-50">
+        <Loading />
+      </div>
+    );
+  }
 
   return (
-    <>
-      {loading ? (
-        <Loading />
-      ) : (
-        <div className="flex w-full">
-          <div className="flex md:flex-row flex-col w-full mt-20 p-5 gap-5">
-            <div className="flex flex-col md:w-1/3 w-full">
-              <div className="w-full flex flex-row justify-center items-center">
-                <img
-                  className="max-w-full h-[450px]"
-                  src={product.images?.imgUrl}
-                  alt={product.name}
-                />
-              </div>
-              <div className="flex flex-row justify-evenly mt-2">
-                <Link
-                  href={
-                    typeof window !== "undefined" &&
-                    localStorage.getItem("token")
-                      ? "/cart"
-                      : "/account"
-                  }
-                  className="p-3 border border-solid w-full text-center font-bold text-lg rounded-full duration-700 bg-purple-800 text-white cursor-pointer hover:bg-white hover:text-purple-800 no-underline flex items-center justify-center"
-                  onClick={addToCart}
-                >
-                  Add To Cart &nbsp;
-                  <span className="h-full flex items-center justify-center">
-                    <BiCartAdd className="text-2xl" />
-                  </span>
-                </Link>
-                <div
-                  className="p-3 border border-solid w-full font-bold text-xl rounded-full duration-700 bg-purple-800 text-white cursor-pointer hover:bg-white hover:text-purple-800 flex items-center justify-center"
-                  onClick={handleBuyNow}
-                >
-                  Buy Now &nbsp;
-                  <span className="h-full flex items-center justify-center">
-                    <AiTwotoneThunderbolt className="text-2xl" />
-                  </span>
-                </div>
-              </div>
+    <div className="min-h-screen bg-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+          
+          {/* Left Section: Image Display */}
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-[2.5rem] overflow-hidden p-8 flex items-center justify-center border border-gray-100 shadow-sm transition-all hover:shadow-md aspect-square lg:aspect-auto lg:h-[600px]">
+              <img
+                className="max-w-full max-h-full object-contain mix-blend-multiply transition-transform duration-700 hover:scale-110"
+                src={product.images?.imgUrl}
+                alt={product.name}
+              />
             </div>
-            <div className="flex flex-col md:ms-5 w-full justify-evenly">
-              <div className="font-bold text-xl w-full">{product.name}</div>
-              <div className="w-full mt-2 text-xl">
-                <div className="font-bold text-xl text-blue-700 font-roboto w-fit p-2">
-                  Product Description :
-                </div>
-                {product.description}
+            {/* Trust Badges */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col items-center p-4 bg-gray-50 rounded-3xl border border-gray-100">
+                <FaTruck className="text-[#6E35AE] mb-2" size={20} />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Fast Delivery</span>
               </div>
-
-              <div className="flex md:flex-row flex-col mt-2">
-                <div className="font-bold text-xl text-blue-700 font-roboto w-fit p-2 flex flex-row">
-                  Price:
-                  <span className="font-bold text-3xl text-black ms-2">
-                    ₹{product.price}
-                  </span>
-                </div>
-                <div className="font-bold text-xl text-blue-700 font-roboto w-fit p-2 flex flex-row">
-                  Product in Stock:
-                  <span className="font-bold text-xl text-black ms-2">
-                    {product.stock}
-                  </span>
-                </div>
+              <div className="flex flex-col items-center p-4 bg-gray-50 rounded-3xl border border-gray-100">
+                <FaShieldAlt className="text-[#6E35AE] mb-2" size={20} />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Secure Payment</span>
               </div>
-              <div className="flex flex-row">
-                <div
-                  className="p-2 ps-3 pe-3 flex justify-center items-center bg-purple-800 text-white rounded-md text-4xl cursor-default"
-                  onClick={decreaseQuantity}
-                >
-                  -
-                </div>
-                <input
-                  type="number"
-                  className="w-10 p-2 border-none outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-center text-xl"
-                  value={quantity}
-                  readOnly
-                />
-                <div
-                  className="flex justify-center items-center p-2 text-center bg-purple-800 text-white rounded-md text-4xl cursor-default"
-                  onClick={increaseQuantity}
-                >
-                  +
-                </div>
-              </div>
-              <div className="flex flex-row mt-2">
-                <div className="p-1 text-blue-700 font-bold text-lg">
-                  Rating:
-                </div>
-                <ReactStars {...handleRating(product.rating)} />
+              <div className="flex flex-col items-center p-4 bg-gray-50 rounded-3xl border border-gray-100">
+                <FaRedoAlt className="text-[#6E35AE] mb-2" size={20} />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Easy Returns</span>
               </div>
             </div>
           </div>
+
+          {/* Right Section: Product Info */}
+          <div className="flex flex-col">
+            {/* Category & Badge */}
+            <div className="flex items-center space-x-3 mb-6">
+              <span className="px-4 py-1 bg-purple-100 text-[#6E35AE] text-xs font-black uppercase tracking-widest rounded-full">
+                {product.category || "Premium Product"}
+              </span>
+              <div className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-bold">
+                <HiOutlineBadgeCheck className="mr-1" size={16} /> Verified Quality
+              </div>
+            </div>
+
+            <h1 className="text-4xl lg:text-5xl font-black text-gray-900 leading-tight mb-4">
+              {product.name}
+            </h1>
+
+            {/* Rating */}
+            <div className="flex items-center mb-8 pb-8 border-b border-gray-100">
+              <div className="mr-3">
+                <ReactStars {...handleRating(product.rating)} />
+              </div>
+              <span className="text-sm font-bold text-gray-400">
+                ({product.numOfReviews || 0} Customer Reviews)
+              </span>
+            </div>
+
+            {/* Price & Stock */}
+            <div className="flex items-end space-x-6 mb-10">
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Price</span>
+                <span className="text-5xl font-black text-gray-900">₹{product.price}</span>
+              </div>
+              <div className="pb-1">
+                <span className={`px-4 py-1.5 rounded-2xl text-xs font-bold uppercase tracking-widest ${
+                  product.stock > 0 
+                  ? "bg-green-100 text-green-700" 
+                  : "bg-red-100 text-red-700"
+                }`}>
+                  {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
+                </span>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mb-10">
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Product Description</h3>
+              <p className="text-gray-600 leading-relaxed text-lg italic font-medium">
+                "{product.description}"
+              </p>
+            </div>
+
+            {/* Quantity Selector */}
+            {product.stock > 0 && (
+              <div className="mb-12">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Select Quantity</h3>
+                <div className="flex items-center w-fit bg-gray-50 p-2 rounded-2xl border border-gray-100 shadow-sm">
+                  <button 
+                    onClick={decreaseQuantity}
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl text-gray-500 hover:text-[#6E35AE] hover:shadow-md transition-all active:scale-90 shadow-sm border border-gray-50"
+                  >
+                    <FaMinus size={14} />
+                  </button>
+                  <span className="w-16 text-center text-xl font-black text-gray-900">{quantity}</span>
+                  <button 
+                    onClick={increaseQuantity}
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-xl text-gray-500 hover:text-[#6E35AE] hover:shadow-md transition-all active:scale-90 shadow-sm border border-gray-50"
+                  >
+                    <FaPlus size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-auto">
+              <button
+                disabled={product.stock <= 0}
+                onClick={addToCart}
+                className="flex-1 flex items-center justify-center gap-3 px-8 py-5 bg-[#6E35AE] text-white rounded-3xl font-bold text-lg shadow-xl shadow-purple-200 hover:bg-[#5a2b8f] transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                <FaCartPlus size={20} /> Add to Cart
+              </button>
+              <button
+                disabled={product.stock <= 0}
+                onClick={handleBuyNow}
+                className="flex-1 flex items-center justify-center gap-3 px-8 py-5 bg-white text-[#6E35AE] border-2 border-[#6E35AE] rounded-3xl font-bold text-lg hover:bg-purple-50 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaBolt size={20} /> Buy Now
+              </button>
+            </div>
+
+            {/* Security Note */}
+            <p className="mt-8 text-center sm:text-left text-xs font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center justify-center sm:justify-start">
+              <FaShieldAlt className="text-green-500 mr-2" size={14} /> 100% Genuine & Secure Guarantee
+            </p>
+          </div>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }
 
 export default ParticularProduct;
+
