@@ -28,3 +28,15 @@ export function deleteItem(id) {
     },
   });
 }
+
+export function updateCartItem(id, quantity) {
+  return http.put(
+    `${APIUrl}/api/v1/cart/${id}`,
+    { quantity },
+    {
+      headers: {
+        authorization: localStorage.getItem("token"),
+      },
+    }
+  );
+}

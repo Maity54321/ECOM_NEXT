@@ -58,7 +58,7 @@ const UserOptions = ({ user, handleLogout }) => {
     router.push("/cart");
   }
   function dashboard() {
-    router.push("/account");
+    router.push("/dashboard");
   }
   function orders() {
     router.push("/orders");
@@ -79,9 +79,9 @@ const UserOptions = ({ user, handleLogout }) => {
             alt="user"
           />
         }
-        direction="down"
+        direction={typeof window !== "undefined" && window.innerWidth < 600 ? "up" : "down"}
         style={{ zIndex: 11 }}
-        className="fixed top-3 right-3"
+        className={typeof window !== "undefined" && window.innerWidth < 600 ? "fixed bottom-3 right-3" : "fixed top-5 right-3"}
         FabProps={{ size: "small" }}
       >
         {options.map((item) => (

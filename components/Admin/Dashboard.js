@@ -1,212 +1,230 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Input from "@/components/common/Input";
-import Joi from "joi-browser";
-import { createProduct } from "@/services/productService";
-import { toast } from "react-toastify";
+import React, { useEffect, useState } from "react";
+import { getProducts } from "@/services/productService";
 import Navbars from "./Navbars";
+import { FiBox, FiTrendingUp, FiAlertCircle, FiTag, FiShoppingBag, FiUsers, FiArrowRight, FiExternalLink } from "react-icons/fi";
+import { HiOutlineDocumentReport } from "react-icons/hi";
 
 function Dashboard() {
-  const router = useRouter();
-
-  const [productData, setProductData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    rating: 0,
-    category: "",
-    stock: "",
-    numOfReviews: 0,
-    reviews: {
-      name: "Maity",
-      rating: 0,
-      comment: "Faltu",
-    },
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalValue: 0,
+    lowStock: 0,
+    categories: 0
   });
-  const [errors, setErrors] = useState({});
-  const [images, setImages] = useState("/Profile.png");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const productSchema = {
-    name: Joi.string().required().label("Product Name"),
-    description: Joi.string().required().label("Product Description"),
-    price: Joi.number().required().label("Product price"),
-    rating: Joi.number().default(0),
-    images: Joi.string(),
-    category: Joi.string()
-      .regex(/^[a-z A-Z]*$/)
-      .required()
-      .label("Category"),
-    stock: Joi.number().required().default(1).label("Stock"),
-    numOfReviews: Joi.number().default(0),
-    reviews: Joi.object(),
-  };
+  // Mock data for recent orders
+  const recentOrders = [
+    { id: "ORD-7321", customer: "Rahul Sharma", amount: 1299, status: "Delivered", date: "2 mins ago" },
+    { id: "ORD-7320", customer: "Priya Patel", amount: 849, status: "Processing", date: "15 mins ago" },
+    { id: "ORD-7319", customer: "Amit Kumar", amount: 2100, status: "Shipped", date: "1 hour ago" },
+    { id: "ORD-7318", customer: "Sneha Reddy", amount: 450, status: "Delivered", date: "3 hours ago" },
+    { id: "ORD-7317", customer: "Vikram Singh", amount: 3200, status: "Pending", date: "5 hours ago" },
+  ];
 
-  const {
-    name,
-    description,
-    price,
-    rating,
-    category,
-    stock,
-    numOfReviews,
-    reviews,
-  } = productData;
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const res = await getProducts();
+        const products = res.data;
 
-  const renderInput = (inputName, type, placeholder) => {
-    return (
-      <Input
-        name={inputName}
-        placeholder={placeholder}
-        type={type}
-        value={productData[inputName]}
-        onChange={handleChange}
-        error={errors[inputName]}
-      />
-    );
-  };
+        const totalProducts = products.length;
+        const totalValue = products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0);
+        const lowStock = products.filter(p => p.stock < 10).length;
+        const categories = new Set(products.map(p => p.category)).size;
 
-  const handleChange = (e) => {
-    if (e.target.name === "image") {
-      setImages(e.target.files[0]);
-    } else {
-      const errorMessage = validateProperty(e.target);
-      if (errorMessage) {
-        setErrors({ ...errors, [e.target.name]: errorMessage });
-      } else {
-        const newErrors = { ...errors };
-        delete newErrors[e.target.name];
-        setErrors(newErrors);
+        setStats({ totalProducts, totalValue, lowStock, categories });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        setLoading(false);
       }
-      setProductData({ ...productData, [e.target.name]: e.target.value });
+    };
+    fetchStats();
+  }, []);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Delivered": return "bg-green-100 text-green-700 border-green-200";
+      case "Processing": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "Shipped": return "bg-purple-100 text-purple-700 border-purple-200";
+      case "Pending": return "bg-yellow-100 text-yellow-700 border-yellow-200";
+      default: return "bg-gray-100 text-gray-700 border-gray-200";
     }
-  };
-
-  const productValidate = () => {
-    const options = { abortEarly: false };
-    const { error } = Joi.validate(productData, productSchema, options);
-    if (!error) return null;
-
-    const errors = {};
-    for (let item of error.details) {
-      error[item.path[0]] = item.message;
-      return errors;
-    }
-  };
-
-  const validateProperty = ({ name, value }) => {
-    const obj = { name: value };
-    var schema = { name: productSchema[name] };
-    const { error } = Joi.validate(obj, schema);
-    return error ? error.details[0].message : null;
-  };
-
-  const createProducts = async (e) => {
-    const myForm = new FormData();
-    myForm.set("name", name);
-    myForm.set("description", description);
-    myForm.set("price", price);
-    myForm.set("rating", rating);
-    myForm.set("productImage", images);
-    myForm.set("category", category);
-    myForm.set("stock", stock);
-    myForm.set("numOfReviews", numOfReviews);
-    try {
-      await createProduct(myForm).then((response) => {
-        toast.success("Product Added to the Store Successfully", {
-          theme: "colored",
-        });
-      });
-    } catch (error) {
-      console.log(error.response.data);
-    }
-  };
-
-  const handleCreateProduct = async (e) => {
-    e.preventDefault();
-    const errors = productValidate();
-    setErrors(errors || {});
-    if (errors) return;
-    setLoading(true);
-    await createProducts();
-    setLoading(false);
   };
 
   return (
     <Navbars>
-      <div className="min-h-screen py-10 px-4 flex justify-center items-start bg-gray-50 font-roboto">
-        <form
-          onSubmit={handleCreateProduct}
-          className="w-full max-w-3xl flex flex-col items-center bg-white shadow-2xl shadow-purple-900/5 p-8 md:p-12 rounded-3xl border border-gray-100 [&_input]:w-full [&_input]:p-4 [&_input]:border [&_input]:border-gray-200 [&_input]:rounded-xl [&_input]:focus:ring-2 [&_input]:focus:ring-purple-500 [&_input]:focus:border-transparent [&_input]:outline-none [&_input]:transition-all [&_input]:bg-gray-50/50 hover:[&_input]:bg-gray-50 [&_input]:text-gray-800"
-        >
-          <div className="w-full text-center mb-10">
-             <h2 className="text-3xl font-bold text-gray-800">Add New Product</h2>
-             <p className="text-gray-500 mt-2">Fill in the details below to publish a new item</p>
-          </div>
-
-          <div className="w-full mb-6 relative">
-            <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Product Name</label>
-            {renderInput("name", "text", "e.g. iPhone 15 Pro")}
-          </div>
-
-          <div className="w-full mb-6 relative">
-             <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Description</label>
-             <textarea
-               onChange={handleChange}
-               className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 resize-none text-gray-800 bg-gray-50/50 hover:bg-gray-50"
-               name="description"
-               rows="5"
-               placeholder="Write a detailed description of the product..."
-             ></textarea>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-6">
-            <div className="w-full relative">
-              <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Price ($)</label>
-              {renderInput("price", "text", "0.00")}
+      <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
+        <div className="max-w-7xl mx-auto">
+          {/* Dashboard Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+            <div>
+              <h1 className="text-3xl mt-3 font-extrabold text-gray-900 tracking-tight">Dashboard Overview</h1>
+              <p className="text-gray-500 mt-2 text-lg">Detailed insights and recent activity for your store.</p>
             </div>
-            <div className="w-full relative">
-              <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Category</label>
-              {renderInput("category", "text", "e.g. Electronics")}
+            <div className="flex gap-3">
+              <button className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+                Export Report
+              </button>
+              <button className="px-4 py-2 bg-purple-600 rounded-xl text-sm font-semibold text-white hover:bg-purple-700 transition-all shadow-md shadow-purple-200">
+                Generate Analytics
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-10">
-            <div className="w-full relative">
-              <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Stock Quantity</label>
-              {renderInput("stock", "number", "0")}
+          {/* Statistics Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {[
+              { label: "Total Products", value: stats.totalProducts, icon: FiBox, color: "text-blue-600", bg: "bg-blue-50" },
+              { label: "Total Revenue", value: `$${stats.totalValue.toLocaleString()}`, icon: FiTrendingUp, color: "text-green-600", bg: "bg-green-50" },
+              { label: "Low Stock Alert", value: stats.lowStock, icon: FiAlertCircle, color: "text-red-600", bg: "bg-red-50" },
+              { label: "Store Categories", value: stats.categories, icon: FiTag, color: "text-purple-600", bg: "bg-purple-50" },
+            ].map((stat, idx) => (
+              <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "..." : stat.value}</p>
+                  </div>
+                  <div className={`p-3 ${stat.bg} ${stat.color} rounded-xl group-hover:scale-110 transition-transform`}>
+                    <stat.icon size={24} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Recent Orders */}
+            <div className="lg:col-span-2 space-y-8">
+              <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+                <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                      <FiShoppingBag size={20} />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-800">Recent Orders</h2>
+                  </div>
+                  <button className="text-purple-600 font-semibold text-sm hover:underline flex items-center gap-1">
+                    View All <FiArrowRight size={14} />
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50/50 text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                      <tr>
+                        <th className="px-8 py-4 text-left">Order ID</th>
+                        <th className="px-8 py-4 text-left">Customer</th>
+                        <th className="px-8 py-4 text-center">Amount</th>
+                        <th className="px-8 py-4 text-center">Status</th>
+                        <th className="px-8 py-4 text-right">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {recentOrders.map((order) => (
+                        <tr key={order.id} className="hover:bg-gray-50/50 transition-colors group">
+                          <td className="px-8 py-5 font-mono text-sm text-gray-600">{order.id}</td>
+                          <td className="px-8 py-5 font-bold text-gray-900">{order.customer}</td>
+                          <td className="px-8 py-5 text-center font-semibold text-gray-900">${order.amount}</td>
+                          <td className="px-8 py-5 text-center">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5 text-right text-sm text-gray-500">{order.date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Analytics Placeholder */}
+              <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                    <FiTrendingUp className="text-green-600" />
+                    Sales Analytics
+                  </h2>
+                  <select className="bg-gray-50 border border-gray-200 rounded-lg text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500/20">
+                    <option>Last 7 Days</option>
+                    <option>Last 30 Days</option>
+                    <option>This Year</option>
+                  </select>
+                </div>
+                <div className="h-64 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400">
+                  <HiOutlineDocumentReport size={48} className="mb-4 opacity-50" />
+                  <p className="font-medium text-lg text-gray-500">Sales Trend Chart Placeholder</p>
+                  <p className="text-sm">Connecting to analytics API soon...</p>
+                </div>
+              </div>
             </div>
-            <div className="w-full relative">
-              <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Product Image</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-2 bg-gray-50 flex items-center justify-center hover:border-purple-500 transition-colors [&_input]:border-none [&_input]:shadow-none [&_input]:bg-transparent [&_input]:p-2 cursor-pointer">
-                 {renderInput("image", "file", "Product Image")}
+
+            {/* Right Column: Insights & Activity */}
+            <div className="space-y-8">
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                  <FiUsers className="text-purple-600" />
+                  Top Customers
+                </h3>
+                <div className="space-y-6">
+                  {[
+                    { name: "Rahul Sharma", orders: 12, spent: 15400 },
+                    { name: "Priya Patel", orders: 9, spent: 8200 },
+                    { name: "Vikram Singh", orders: 7, spent: 6100 },
+                  ].map((cust, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700">
+                          {cust.name[0]}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 text-sm">{cust.name}</p>
+                          <p className="text-xs text-gray-500">{cust.orders} Orders</p>
+                        </div>
+                      </div>
+                      <p className="font-bold text-gray-900 text-sm">${cust.spent.toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-600 to-purple-900 p-8 rounded-3xl text-white shadow-xl shadow-purple-500/20 group">
+                <div className="flex items-start justify-between mb-6">
+                  <h3 className="text-xl font-bold text-white">System Health</h3>
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                </div>
+                <div className="space-y-4 mb-8">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-100">API Status</span>
+                    <span className="font-bold">Operational</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-100">Database</span>
+                    <span className="font-bold">Healthy</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-100">Last Backup</span>
+                    <span className="font-bold">2h ago</span>
+                  </div>
+                </div>
+                <button className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
+                  <FiExternalLink /> Server Logs
+                </button>
               </div>
             </div>
           </div>
-
-          <button
-            className="w-full md:w-2/3 bg-gradient-to-r from-purple-600 to-purple-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-purple-500/40 transform transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex justify-center items-center gap-2"
-            type="submit"
-            disabled={productValidate() || loading}
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Publishing...
-              </>
-            ) : (
-              "Publish Product"
-            )}
-          </button>
-        </form>
+        </div>
       </div>
     </Navbars>
   );
 }
 
 export default Dashboard;
+
+

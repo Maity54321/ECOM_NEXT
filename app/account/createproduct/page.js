@@ -1,9 +1,9 @@
-import Dashboard from "@/components/Admin/Dashboard";
+import CreateProduct from "@/components/Admin/CreateProduct";
 
 export const metadata = {
   title: "Create Product - Techworld Admin",
 };
 
 export default function CreateProductPage() {
-  return <Dashboard />;
+  return <CreateProduct />;
 }

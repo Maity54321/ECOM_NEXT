@@ -1,92 +1,130 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { IoMdArrowDropdown } from "react-icons/io";
+import { FiGrid, FiPlusSquare, FiList, FiLogOut, FiMenu, FiX, FiUser } from "react-icons/fi";
 
 function Navbars({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const dropdown = useRef(null);
-
-  const showHide = () => {
-    if (dropdown.current) {
-      dropdown.current.classList.toggle("hidden");
-    }
-  };
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const logout = () => {
     localStorage.removeItem("token");
     router.push("/account");
   };
 
+  const navLinks = [
+    { name: "Dashboard", path: "/dashboard", icon: FiGrid },
+    { name: "Create Product", path: "/account/createproduct", icon: FiPlusSquare },
+    { name: "View Products", path: "/account/viewproducts", icon: FiList },
+  ];
+
   const isActive = (path) => pathname === path;
 
-  const linkStyle = (path) => ({
-    fontWeight: isActive(path) ? "bold" : "normal",
-    color: isActive(path) ? "black" : "white",
-    textShadow: isActive(path) ? "2px 2px 2px white" : "",
-  });
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
 
   return (
-    <>
-      <div className="p-1 bg-purple-800 text-white md:m-0 flex flex-row md:w-full w-6/7 ms-12">
-        <div className="place-self-center w-1/3 text-xl ps-3 md:block hidden">
-          This is Dashboard
+    <div className="min-h-screen bg-gray-50 flex overflow-hidden font-sans">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm lg:hidden transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 mt-9 left-0 z-50 w-64 bg-white border-r border-gray-100 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+      >
+        <div className="h-full flex flex-col">
+          {/* Logo Section */}
+          <div className="p-6 flex items-center justify-between lg:block">
+            <Link href="/dashboard" className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-200">
+                <FiGrid size={22} />
+              </div>
+              <span className="text-xl font-bold text-gray-900 tracking-tight">AdminPanel</span>
+            </Link>
+            <button
+              className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex-1 px-4 space-y-2 mt-4">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                href={link.path}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 group ${isActive(link.path)
+                  ? "bg-purple-600 text-white shadow-lg shadow-purple-200"
+                  : "text-gray-500 hover:bg-purple-50 hover:text-purple-600"
+                  }`}
+              >
+                <link.icon size={20} className={isActive(link.path) ? "text-white" : "text-gray-400 group-hover:text-purple-600"} />
+                {link.name}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Bottom Section */}
+          {/* <div className="p-6 border-t border-gray-50">
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all duration-200"
+            >
+              <FiLogOut size={20} />
+              Logout Session
+            </button>
+          </div> */}
         </div>
-        <div className="place-self-center text-center md:w-1/3 w-1/2 text-xl">
-          Welcome Admin
-        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        {/* <header className="my-5 h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0">
+          <div className="flex items-center gap-4">
+            <button
+              className="lg:hidden p-2 text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <FiMenu size={24} />
+            </button>
+            <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
+              {navLinks.find(l => isActive(l.path))?.name || "Settings"}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex flex-col items-end">
+              <span className="text-sm font-bold text-gray-900">Admin User</span>
+              <span className="text-xs text-gray-500 font-medium tracking-wide uppercase">Store Manager</span>
+            </div>
+            <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 border border-gray-200 shadow-sm">
+              <FiUser size={20} />
+            </div>
+          </div>
+        </header> */}
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto bg-gray-50/50">
+          {children}
+        </main>
       </div>
-      <div className="flex md:flex-row flex-col gap-3 bg-purple-700 md:w-4/5 w-4/5 me-0 ms-auto md:me-auto text-white p-2">
-        <div className="place-self-end">
-          <div
-            className="text-white no-underline text-xl md:hidden border cursor-pointer"
-            onClick={showHide}
-          >
-            Operations
-            <span className="md:hidden text-xl">
-              <IoMdArrowDropdown />
-            </span>
-          </div>
-        </div>
-        <div className="md:flex md:flex-row gap-3 hidden" ref={dropdown}>
-          <div className="text-end">
-            <Link
-              href="/account"
-              style={linkStyle("/account")}
-              className="text-white no-underline text-xl"
-              onClick={showHide}
-            >
-              Admin Home
-            </Link>
-          </div>
-          <div className="text-end">
-            <Link
-              href="/account/createproduct"
-              style={linkStyle("/account/createproduct")}
-              className="text-white no-underline text-xl"
-              onClick={showHide}
-            >
-              Create Product
-            </Link>
-          </div>
-          <div className="text-end">
-            <Link
-              href="/account/viewproducts"
-              style={linkStyle("/account/viewproducts")}
-              className="text-white no-underline text-xl"
-              onClick={showHide}
-            >
-              View All Products
-            </Link>
-          </div>
-        </div>
-      </div>
-      {children}
-    </>
+    </div>
   );
 }
 
 export default Navbars;
+

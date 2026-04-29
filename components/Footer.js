@@ -37,7 +37,7 @@ function Footer() {
           </div>
         </div>
         <div className="flex flex-row text-center font-cursive justify-center items-center text-white text-[2.3vmax]">
-          Designed By @Maity
+          Developed By @Maity
         </div>
         <div className="flex flex-row font-roboto text-center justify-center items-center text-white text-[2.5vmax]">
           Copyright &copy; 2023
