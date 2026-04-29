@@ -6,17 +6,17 @@ import { getUserOrderDetails } from "@/services/orderService";
 import Loading from "@/components/Loading/Loading";
 import { decodeToken } from "react-jwt";
 import { toast } from "react-toastify";
-import { 
-  FiArrowLeft, 
-  FiMapPin, 
-  FiPhone, 
-  FiUser, 
-  FiCreditCard, 
-  FiPackage, 
-  FiClock, 
-  FiCheckCircle, 
-  FiTruck, 
-  FiHash 
+import {
+  FiArrowLeft,
+  FiMapPin,
+  FiPhone,
+  FiUser,
+  FiCreditCard,
+  FiPackage,
+  FiClock,
+  FiCheckCircle,
+  FiTruck,
+  FiHash
 } from "react-icons/fi";
 import Link from "next/link";
 
@@ -97,7 +97,7 @@ const UserOrderDetails = () => {
         {/* Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <button 
+            <button
               onClick={() => router.push("/orders")}
               className="group inline-flex items-center text-sm font-medium text-slate-500 hover:text-purple-600 transition-colors mb-2"
             >
@@ -226,7 +226,7 @@ const UserOrderDetails = () => {
                 </div>
                 <div className="mt-6 p-4 bg-purple-50 rounded-xl">
                   <p className="text-xs text-purple-700 font-medium text-center">
-                    Payment Method: <span className="uppercase">{orderDetails.paymentInfo?.status === "succeeded" ? "Card / Digital" : "Cash on Delivery"}</span>
+                    Payment Method: <span className="uppercase">{orderDetails.paymentInfo?.status === "succeeded" ? "Card / Digital" : "ONLINE"}</span>
                   </p>
                 </div>
               </div>
