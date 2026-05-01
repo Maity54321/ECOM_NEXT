@@ -5,7 +5,7 @@ import { SpeedDial, SpeedDialAction, Backdrop } from "@mui/material";
 import { RiDashboard2Fill } from "react-icons/ri";
 import { ImExit, ImList2 } from "react-icons/im";
 import { BsFillPersonFill } from "react-icons/bs";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart, FaUserCircle } from "react-icons/fa";
 import { getCartItems } from "@/services/cartService";
 import { useRouter } from "next/navigation";
 
@@ -73,16 +73,23 @@ const UserOptions = ({ user, handleLogout }) => {
         onOpen={() => setOpen(true)}
         open={open}
         icon={
-          <img
+          user?.image?.url ? <img
             src={user?.image?.url}
             className="w-10 h-10 rounded-full"
             alt="user"
-          />
+          /> : <FaUserCircle className="w-10 h-10 rounded-full" color="white" />
         }
         direction={typeof window !== "undefined" && window.innerWidth < 600 ? "up" : "down"}
         style={{ zIndex: 11 }}
         className={typeof window !== "undefined" && window.innerWidth < 600 ? "fixed bottom-3 right-3" : "fixed top-5 right-3"}
-        FabProps={{ size: "small" }}
+        FabProps={{
+          sx: {
+            bgcolor: '#6E35AE',
+            '&:hover': {
+              bgcolor: '#6E35AE',
+            }
+          }, size: "small"
+        }}
       >
         {options.map((item) => (
           <SpeedDialAction

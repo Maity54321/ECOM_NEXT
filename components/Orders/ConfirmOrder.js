@@ -14,7 +14,7 @@ const ConfirmOrder = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  
+
   const address = shippingDetails
     ? `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state}, ${shippingDetails.country} - ${shippingDetails.pinCode}`
     : "";
@@ -200,14 +200,14 @@ const ConfirmOrder = () => {
                   <span className="text-lg font-bold text-slate-900">Total</span>
                   <span className="text-2xl font-black text-purple-600">{formatCurrency(total)}</span>
                 </div>
-                
+
                 <button
                   onClick={() => handlePayment(total)}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-200 hover:shadow-purple-300 transition-all transform hover:-translate-y-0.5 active:scale-95"
                 >
                   Proceed to Payment
                 </button>
-                
+
                 <p className="text-[10px] text-slate-400 text-center mt-4 uppercase tracking-widest font-bold">
                   Secure checkout powered by Razorpay
                 </p>

@@ -7,20 +7,12 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createCart } from "@/services/cartService";
 import Loading from "@/components/Loading/Loading";
-import { 
-  FaCartPlus, 
-  FaBolt, 
-  FaMinus, 
-  FaPlus, 
-  FaShieldAlt, 
-  FaTruck, 
-  FaRedoAlt 
-} from "react-icons/fa";
+import { FaCartPlus, FaBolt, FaMinus, FaPlus, FaShieldAlt, FaTruck, FaRedoAlt } from "react-icons/fa";
 import { HiOutlineBadgeCheck } from "react-icons/hi";
 
-const ReactStars = dynamic(() => import("react-rating-stars-component"), {
-  ssr: false,
-});
+import { Rating, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
+import { submitReview } from "@/services/productService";
+import { toast } from "react-toastify";
 
 function ParticularProduct() {
   const [product, setProduct] = useState({});
@@ -29,6 +21,11 @@ function ParticularProduct() {
   const id = params.id;
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Review states
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
 
   useEffect(() => {
     try {
@@ -43,16 +40,26 @@ function ParticularProduct() {
     window.scrollTo(0, 0);
   }, [id]);
 
-  const handleRating = (val) => {
-    const options = {
-      edit: false,
-      color: "rgba(30,30,30,0.2)",
-      activeColor: "#6E35AE",
-      size: typeof window !== "undefined" && window.innerWidth > 650 ? 24 : 20,
-      value: val || 0,
-      isHalf: true,
+  const submitReviewHandler = async () => {
+    const myForm = {
+      rating,
+      comment,
+      productId: id,
     };
-    return options;
+
+    try {
+      const response = await submitReview(myForm);
+      if (response.data.success) {
+        toast.success("Review Submitted Successfully");
+        setOpen(false);
+        // Refresh product data
+        getParticularProduct(id).then((response) => {
+          setProduct(response.data.product);
+        });
+      }
+    } catch (error) {
+      toast.error(error.response?.data || "Something went wrong");
+    }
   };
 
   const addToCart = async () => {
@@ -94,7 +101,7 @@ function ParticularProduct() {
     <div className="min-h-screen bg-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-          
+
           {/* Left Section: Image Display */}
           <div className="space-y-4">
             <div className="bg-gray-50 rounded-[2.5rem] overflow-hidden p-8 flex items-center justify-center border border-gray-100 shadow-sm transition-all hover:shadow-md aspect-square lg:aspect-auto lg:h-[600px]">
@@ -139,12 +146,24 @@ function ParticularProduct() {
 
             {/* Rating */}
             <div className="flex items-center mb-8 pb-8 border-b border-gray-100">
-              <div className="mr-3">
-                <ReactStars {...handleRating(product.rating)} />
+              <div className="mr-3 flex items-center gap-2">
+                <Rating
+                  value={product.ratings || 0}
+                  precision={0.5}
+                  readOnly
+                  sx={{ color: "#6E35AE" }}
+                />
+                <span className="text-lg font-bold text-gray-900">{product.ratings?.toFixed(1) || "0.0"}</span>
               </div>
-              <span className="text-sm font-bold text-gray-400">
+              <span className="text-sm font-bold text-gray-400 mr-6">
                 ({product.numOfReviews || 0} Customer Reviews)
               </span>
+              <button
+                onClick={() => setOpen(true)}
+                className="text-[#6E35AE] font-bold text-sm hover:underline transition-all"
+              >
+                Write a Review
+              </button>
             </div>
 
             {/* Price & Stock */}
@@ -154,11 +173,10 @@ function ParticularProduct() {
                 <span className="text-5xl font-black text-gray-900">₹{product.price}</span>
               </div>
               <div className="pb-1">
-                <span className={`px-4 py-1.5 rounded-2xl text-xs font-bold uppercase tracking-widest ${
-                  product.stock > 0 
-                  ? "bg-green-100 text-green-700" 
+                <span className={`px-4 py-1.5 rounded-2xl text-xs font-bold uppercase tracking-widest ${product.stock > 0
+                  ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
-                }`}>
+                  }`}>
                   {product.stock > 0 ? `In Stock (${product.stock})` : "Out of Stock"}
                 </span>
               </div>
@@ -177,14 +195,14 @@ function ParticularProduct() {
               <div className="mb-12">
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Select Quantity</h3>
                 <div className="flex items-center w-fit bg-gray-50 p-2 rounded-2xl border border-gray-100 shadow-sm">
-                  <button 
+                  <button
                     onClick={decreaseQuantity}
                     className="w-12 h-12 flex items-center justify-center bg-white rounded-xl text-gray-500 hover:text-[#6E35AE] hover:shadow-md transition-all active:scale-90 shadow-sm border border-gray-50"
                   >
                     <FaMinus size={14} />
                   </button>
                   <span className="w-16 text-center text-xl font-black text-gray-900">{quantity}</span>
-                  <button 
+                  <button
                     onClick={increaseQuantity}
                     className="w-12 h-12 flex items-center justify-center bg-white rounded-xl text-gray-500 hover:text-[#6E35AE] hover:shadow-md transition-all active:scale-90 shadow-sm border border-gray-50"
                   >
@@ -219,6 +237,109 @@ function ParticularProduct() {
           </div>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      <div className="max-w-7xl mx-auto mt-20 px-4 sm:px-6 lg:px-8">
+        <h2 className="text-3xl font-black text-gray-900 mb-10 text-center lg:text-left">Customer Reviews</h2>
+        {product.reviews && product.reviews[0] ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {product.reviews.map((review) => (
+              <div key={review._id} className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col h-full">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-[#6E35AE] font-bold text-xl mr-4 uppercase">
+                    {review.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">{review.name}</p>
+                    <Rating value={review.rating} readOnly size="small" sx={{ color: "#6E35AE" }} />
+                  </div>
+                </div>
+                <p className="text-gray-600 italic flex-grow">"{review.comment}"</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 py-16 rounded-[3rem] text-center border border-gray-100">
+            <p className="text-gray-400 font-bold text-xl uppercase tracking-widest">No Reviews Yet</p>
+            <p className="text-gray-500 mt-2">Be the first to review this product!</p>
+            <button
+              onClick={() => setOpen(true)}
+              className="mt-6 px-8 py-3 bg-white text-[#6E35AE] border-2 border-[#6E35AE] rounded-full font-bold hover:bg-purple-50 transition-all"
+            >
+              Submit Review
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Review Dialog */}
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        PaperProps={{
+          style: {
+            borderRadius: "2rem",
+            padding: "1rem",
+          },
+        }}
+      >
+        <DialogTitle className="font-black text-2xl text-gray-900">Submit Review</DialogTitle>
+        <DialogContent>
+          <div className="flex flex-col gap-6 mt-2">
+            <div className="flex flex-col items-center gap-2">
+              <p className="font-bold text-gray-400 uppercase tracking-widest text-xs">Overall Rating</p>
+              <Rating
+                name="rating"
+                value={rating}
+                onChange={(e, newValue) => setRating(newValue)}
+                size="large"
+                sx={{ color: "#6E35AE" }}
+              />
+            </div>
+            <TextField
+              label="Your Experience"
+              multiline
+              rows={4}
+              variant="outlined"
+              fullWidth
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="What did you like or dislike?"
+              InputProps={{
+                style: { borderRadius: "1.5rem" },
+              }}
+            />
+          </div>
+        </DialogContent>
+        <DialogActions className="p-6 pt-0">
+          <Button
+            onClick={() => setOpen(false)}
+            sx={{
+              color: "gray",
+              fontWeight: "bold",
+              borderRadius: "1rem",
+              px: 3,
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={submitReviewHandler}
+            variant="contained"
+            sx={{
+              backgroundColor: "#6E35AE",
+              "&:hover": { backgroundColor: "#5a2b8f" },
+              fontWeight: "bold",
+              borderRadius: "1rem",
+              px: 4,
+              py: 1.5,
+              boxShadow: "0 10px 20px -5px rgba(110, 53, 174, 0.3)",
+            }}
+          >
+            Submit Review
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

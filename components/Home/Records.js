@@ -2,25 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const ReactStars = dynamic(() => import("react-rating-stars-component"), {
-  ssr: false,
-});
+import { Rating } from "@mui/material";
 
 const Records = ({ data }) => {
-  const handleRating = (val) => {
-    const options = {
-      edit: false,
-      color: "rgba(30,30,30,0.5)",
-      activeColor: "Purple",
-      size: typeof window !== "undefined" && window.innerWidth > 650 ? 20 : 20,
-      value: val,
-      isHalf: true,
-    };
-    return options;
-  };
-
   return (
     <>
       {data.map((item) => (
@@ -43,8 +27,16 @@ const Records = ({ data }) => {
               {item.name}
             </div>
             <div className="flex flex-wrap items-center justify-center my-2 gap-2">
-              <ReactStars {...handleRating(item.ratings)} />
-              <span className="text-sm text-gray-500">({item.numOfReviews}) Reviews</span>
+              <Rating
+                value={item.ratings || 0}
+                precision={0.5}
+                readOnly
+                size="small"
+                sx={{ color: "#6E35AE" }}
+              />
+              <span className="text-xs text-gray-400 font-bold">
+                ({item.numOfReviews || 0})
+              </span>
             </div>
             <div className="text-xl font-bold text-gray-800 mt-auto">₹ {item.price}</div>
           </Link>

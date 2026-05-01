@@ -55,3 +55,11 @@ export function updateProduct(product) {
     },
   });
 }
+
+export function submitReview(reviewData) {
+  return http.put(`${APIUrl}/api/v1/products/review/` + reviewData.productId, reviewData, {
+    headers: {
+      authorization: localStorage.getItem("token"),
+    },
+  });
+}

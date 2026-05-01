@@ -40,3 +40,11 @@ export function updateCartItem(id, quantity) {
     }
   );
 }
+
+export function clearCart() {
+  return http.delete(`${APIUrl}/api/v1/cart/allitems`, {
+    headers: {
+      authorization: localStorage.getItem("token"),
+    },
+  });
+}

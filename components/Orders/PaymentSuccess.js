@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getCartItems } from "@/services/cartService";
+import { clearCart, getCartItems } from "@/services/cartService";
 import { myOrder } from "@/services/orderService";
 
 const PaymentSuccess = () => {
@@ -57,6 +57,7 @@ const PaymentSuccess = () => {
     if (cart.length !== 0) {
       createOrder(order);
       setTimeout(() => {
+        clearCart();
         router.push("/orders");
       }, 3000);
     }
