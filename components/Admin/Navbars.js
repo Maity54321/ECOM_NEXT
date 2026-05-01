@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FiGrid, FiPlusSquare, FiList, FiLogOut, FiMenu, FiX, FiUser } from "react-icons/fi";
+import { FiGrid, FiPlusSquare, FiList, FiLogOut, FiMenu, FiX, FiUser, FiShoppingCart } from "react-icons/fi";
 
 function Navbars({ children }) {
   const router = useRouter();
@@ -19,6 +19,7 @@ function Navbars({ children }) {
     { name: "Dashboard", path: "/dashboard", icon: FiGrid },
     { name: "Create Product", path: "/account/createproduct", icon: FiPlusSquare },
     { name: "View Products", path: "/account/viewproducts", icon: FiList },
+    { name: "Orders", path: "/dashboard/orders", icon: FiShoppingCart },
   ];
 
   const isActive = (path) => pathname === path;

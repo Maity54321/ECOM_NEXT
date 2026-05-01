@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { deleteItem, getCartItems, updateCartItem } from "@/services/cartService";
+import { deleteItem, getCartItems, updateCartItem, clearCart } from "@/services/cartService";
 import {
   FaTrashAlt,
   FaPlus,
@@ -51,6 +51,22 @@ const Cart = () => {
         await deleteItem(itemId);
         myCart();
         swal("Removed!", "Item has been removed from your cart.", "success");
+      }
+    });
+  };
+
+  const handleClearCart = () => {
+    swal({
+      title: "Clear entire cart?",
+      text: "Are you sure you want to remove all items from your cart?",
+      icon: "warning",
+      buttons: ["Cancel", "Yes, Clear All"],
+      dangerMode: true,
+    }).then(async (willClear) => {
+      if (willClear) {
+        await clearCart();
+        myCart();
+        swal("Cleared!", "Your cart is now empty.", "success");
       }
     });
   };
@@ -187,10 +203,16 @@ const Cart = () => {
               </div>
             ))}
 
-            <div className="flex justify-between items-center pt-6 border-t border-gray-200">
-              <Link href="/product" className="flex items-center text-gray-500 font-bold hover:text-[#6E35AE] transition-colors">
+            <div className="flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-gray-200 gap-4">
+              <Link href="/product" className="flex items-center text-gray-500 font-bold hover:text-[#6E35AE] transition-colors order-2 sm:order-1">
                 <FaArrowRight className="rotate-180 mr-2" /> Continue Shopping
               </Link>
+              <button
+                onClick={handleClearCart}
+                className="flex items-center px-6 py-2 border-2 border-red-100 text-red-500 rounded-xl font-bold hover:bg-red-50 hover:border-red-200 transition-all active:scale-95 order-1 sm:order-2"
+              >
+                <FaTrashAlt className="mr-2" /> Clear Cart
+              </button>
             </div>
           </div>
 

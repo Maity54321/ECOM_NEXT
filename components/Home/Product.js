@@ -9,7 +9,7 @@ const Product = () => {
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [recordsPerPage, setRecordsPerPage] = useState(8);
+  const [recordsPerPage, setRecordsPerPage] = useState(12);
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
