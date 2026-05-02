@@ -13,7 +13,9 @@ import {
   FiCheckCircle,
   FiTruck,
   FiMoreVertical,
-  FiArrowRight
+  FiArrowRight,
+  FiChevronLeft,
+  FiChevronRight
 } from "react-icons/fi";
 import swal from "sweetalert";
 import Link from "next/link";
@@ -26,22 +28,38 @@ function AllOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [openStatusId, setOpenStatusId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const LIMIT = 20;
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = currentPage) => {
     try {
       setLoading(true);
-      const res = await allOrders();
+      const res = await allOrders(page, LIMIT);
       setOrders(res.data.orders);
+      // Extract pagination metadata from response
+      setTotalPages(Math.ceil(res.data.totalCount / LIMIT) || res.data.pages || 1);
+      setTotalOrders(res.data.totalCount || res.data.totalOrders || 0);
+      setCurrentPage(page);
     } catch (error) {
       console.error("Error fetching orders:", error);
+      toast.error("Failed to fetch orders", { theme: "colored" });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(1);
   }, []);
+
+  // Fetch orders when page changes
+  useEffect(() => {
+    if (currentPage > 0) {
+      fetchOrders(currentPage);
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -56,9 +74,8 @@ function AllOrders() {
   const handleUpdateStatus = async (id, newStatus) => {
     try {
       await updateOrderStatus(id, newStatus);
-      // swal("Updated!", `Order status changed to ${newStatus}`, "success");
       toast.success(`Order status changed to ${newStatus}`, { theme: "colored" });
-      fetchOrders();
+      fetchOrders(currentPage);
     } catch (error) {
       swal("Error!", error.response?.data || "Something went wrong", "error");
     }
@@ -76,7 +93,7 @@ function AllOrders() {
         try {
           await adminDeleteOrder(id);
           swal("Deleted!", "Order has been removed.", "success");
-          fetchOrders();
+          fetchOrders(1);
         } catch (error) {
           swal("Error!", "Failed to delete order", "error");
         }
@@ -100,6 +117,18 @@ function AllOrders() {
     return matchesSearch && matchesFilter;
   });
 
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
   return (
     <Navbars>
       <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
@@ -113,7 +142,7 @@ function AllOrders() {
             <div className="flex items-center gap-3">
               <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-3">
                 <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Orders</span>
-                <span className="text-xl font-black text-purple-600">{orders.length}</span>
+                <span className="text-xl font-black text-purple-600">{totalOrders || orders.length}</span>
               </div>
             </div>
           </div>
@@ -161,91 +190,125 @@ function AllOrders() {
                 <p className="text-gray-400 text-sm">Try adjusting your filters or search term.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-gray-50/50 text-gray-500 text-xs font-black uppercase tracking-[0.2em]">
-                      <th className="px-8 py-6">Order Info</th>
-                      <th className="px-8 py-6">Customer</th>
-                      <th className="px-8 py-6">Total Amount</th>
-                      <th className="px-8 py-6 text-center">Status</th>
-                      <th className="px-8 py-6 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredOrders.map((order) => (
-                      <tr key={order._id} className="hover:bg-gray-50/30 transition-colors group">
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                            <span className="font-mono text-xs font-bold text-gray-400 mb-1">#{order._id.slice(-8).toUpperCase()}</span>
-                            <span className="text-xs font-medium text-gray-500">
-                              {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-gray-900">{order.user?.name || "Guest"}</span>
-                            <span className="text-xs text-gray-500">{order.user?.email}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className="text-lg font-black text-gray-900">₹ {order.totalPrice.toLocaleString()}</span>
-                        </td>
-                        <td className="px-8 py-6 text-center">
-                          <div className="relative flex items-center justify-center status-dropdown">
-                            <button
-                              onClick={() => setOpenStatusId(openStatusId === order._id ? null : order._id)}
-                              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${getStatusStyle(order.orderStatus)}`}
-                            >
-                              {order.orderStatus}
-                              <FiMoreVertical className="text-[10px]" />
-                            </button>
-
-                            {openStatusId === order._id && (
-                              <div className="absolute top-full mt-2 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 animate-in fade-in zoom-in duration-200">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 px-4 mb-2">Update Status</p>
-                                {["Processing", "Shipped", "Delivered"].map((status) => (
-                                  <button
-                                    key={status}
-                                    onClick={() => {
-                                      handleUpdateStatus(order._id, status);
-                                      setOpenStatusId(null);
-                                    }}
-                                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-2 group/item`}
-                                  >
-                                    <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusStyle(status)} group-hover/item:scale-105 transition-transform w-full text-center`}>
-                                      {status}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center justify-end gap-2">
-                            <Link
-                              href={`/orderdetais/${order._id}`}
-                              className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                              title="View Details"
-                            >
-                              <FiEye size={18} />
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteOrder(order._id)}
-                              className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                              title="Delete Order"
-                            >
-                              <FiTrash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-gray-50/50 text-gray-500 text-xs font-black uppercase tracking-[0.2em]">
+                        <th className="px-8 py-6">Order Info</th>
+                        <th className="px-8 py-6">Customer</th>
+                        <th className="px-8 py-6">Total Amount</th>
+                        <th className="px-8 py-6 text-center">Status</th>
+                        <th className="px-8 py-6 text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredOrders.map((order) => (
+                        <tr key={order._id} className="hover:bg-gray-50/30 transition-colors group">
+                          <td className="px-8 py-6">
+                            <div className="flex flex-col">
+                              <span className="font-mono text-xs font-bold text-gray-400 mb-1">#{order._id.slice(-8).toUpperCase()}</span>
+                              <span className="text-xs font-medium text-gray-500">
+                                {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-gray-900">{order.user?.name || "Guest"}</span>
+                              <span className="text-xs text-gray-500">{order.user?.email}</span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <span className="text-lg font-black text-gray-900">₹ {order.totalPrice.toLocaleString()}</span>
+                          </td>
+                          <td className="px-8 py-6 text-center">
+                            <div className="relative flex items-center justify-center status-dropdown">
+                              <button
+                                onClick={() => setOpenStatusId(openStatusId === order._id ? null : order._id)}
+                                className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${getStatusStyle(order.orderStatus)}`}
+                              >
+                                {order.orderStatus}
+                                <FiMoreVertical className="text-[10px]" />
+                              </button>
+
+                              {openStatusId === order._id && (
+                                <div className="absolute top-full mt-2 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 animate-in fade-in zoom-in duration-200">
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 px-4 mb-2">Update Status</p>
+                                  {["Processing", "Shipped", "Delivered"].map((status) => (
+                                    <button
+                                      key={status}
+                                      onClick={() => {
+                                        handleUpdateStatus(order._id, status);
+                                        setOpenStatusId(null);
+                                      }}
+                                      className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-2 group/item`}
+                                    >
+                                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusStyle(status)} group-hover/item:scale-105 transition-transform w-full text-center`}>
+                                        {status}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center justify-end gap-2">
+                              <Link
+                                href={`/orderdetais/${order._id}`}
+                                className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                title="View Details"
+                              >
+                                <FiEye size={18} />
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteOrder(order._id)}
+                                className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                title="Delete Order"
+                              >
+                                <FiTrash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="bg-gray-50/50 border-t border-gray-100 px-8 py-6 flex items-center justify-between">
+                  <button
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold text-sm transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                  >
+                    <FiChevronLeft size={18} />
+                    <span>Previous</span>
+                  </button>
+
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-semibold text-gray-600">
+                      Page <span className="text-purple-600 font-black">{currentPage}</span> of <span className="text-purple-600 font-black">{totalPages}</span>
+                    </span>
+                    {totalOrders > 0 && (
+                      <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                        Total: <span className="font-bold">{totalOrders}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage >= totalPages}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold text-sm transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                  >
+                    <span>Next</span>
+                    <FiChevronRight size={18} />
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
