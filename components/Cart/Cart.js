@@ -2,15 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { deleteItem, getCartItems, updateCartItem, clearCart } from "@/services/cartService";
-import {
-  FaTrashAlt,
-  FaPlus,
-  FaMinus,
-  FaShoppingBag,
-  FaArrowRight,
-  FaShoppingCart,
-  FaShieldAlt
-} from "react-icons/fa";
+import { FaTrashAlt, FaPlus, FaMinus, FaArrowRight, FaShoppingCart, FaShieldAlt } from "react-icons/fa";
 import swal from "sweetalert";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

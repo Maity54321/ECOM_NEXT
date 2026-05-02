@@ -25,6 +25,7 @@ function AllOrders() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [openStatusId, setOpenStatusId] = useState(null);
 
   const fetchOrders = async () => {
     try {
@@ -40,6 +41,16 @@ function AllOrders() {
 
   useEffect(() => {
     fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".status-dropdown")) {
+        setOpenStatusId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleUpdateStatus = async (id, newStatus) => {
@@ -182,19 +193,34 @@ function AllOrders() {
                           <span className="text-lg font-black text-gray-900">₹ {order.totalPrice.toLocaleString()}</span>
                         </td>
                         <td className="px-8 py-6 text-center">
-                          <div className="flex items-center justify-center gap-3">
-                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(order.orderStatus)}`}>
-                              {order.orderStatus}
-                            </span>
-                            <select
-                              className="w-8 h-8 bg-gray-50 border border-gray-200 rounded-lg text-[10px] outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                              onChange={(e) => handleUpdateStatus(order._id, e.target.value)}
-                              value={order.orderStatus}
+                          <div className="relative flex items-center justify-center status-dropdown">
+                            <button
+                              onClick={() => setOpenStatusId(openStatusId === order._id ? null : order._id)}
+                              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${getStatusStyle(order.orderStatus)}`}
                             >
-                              <option value="Processing">Process</option>
-                              <option value="Shipped">Ship</option>
-                              <option value="Delivered">Deliver</option>
-                            </select>
+                              {order.orderStatus}
+                              <FiMoreVertical className="text-[10px]" />
+                            </button>
+
+                            {openStatusId === order._id && (
+                              <div className="absolute top-full mt-2 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 animate-in fade-in zoom-in duration-200">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 px-4 mb-2">Update Status</p>
+                                {["Processing", "Shipped", "Delivered"].map((status) => (
+                                  <button
+                                    key={status}
+                                    onClick={() => {
+                                      handleUpdateStatus(order._id, status);
+                                      setOpenStatusId(null);
+                                    }}
+                                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-2 group/item`}
+                                  >
+                                    <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusStyle(status)} group-hover/item:scale-105 transition-transform w-full text-center`}>
+                                      {status}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-8 py-6">

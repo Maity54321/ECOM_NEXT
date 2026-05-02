@@ -130,7 +130,7 @@ const ViewProducts = () => {
                         {item.name}
                       </div>
                     </div>
-                    
+
                     <div className="col-span-4 lg:col-span-3 text-center hidden md:block">
                       <code className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-500 font-mono">
                         {item._id.slice(-8)}...

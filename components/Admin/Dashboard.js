@@ -2,48 +2,97 @@
 
 import React, { useEffect, useState } from "react";
 import { getProducts } from "@/services/productService";
+import { allOrders, getTopCustomers } from "@/services/orderService";
+import { ping } from "@/services/healthCheck.service";
 import Navbars from "./Navbars";
 import { FiBox, FiTrendingUp, FiAlertCircle, FiTag, FiShoppingBag, FiUsers, FiArrowRight, FiExternalLink } from "react-icons/fi";
 import { HiOutlineDocumentReport } from "react-icons/hi";
+import { useRouter } from "next/navigation";
 
 function Dashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalValue: 0,
     lowStock: 0,
     categories: 0
   });
-  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [customersLoading, setCustomersLoading] = useState(true);
+  const [healthLoading, setHealthLoading] = useState(true);
 
-  // Mock data for recent orders
-  const recentOrders = [
-    { id: "ORD-7321", customer: "Rahul Sharma", amount: 1299, status: "Delivered", date: "2 mins ago" },
-    { id: "ORD-7320", customer: "Priya Patel", amount: 849, status: "Processing", date: "15 mins ago" },
-    { id: "ORD-7319", customer: "Amit Kumar", amount: 2100, status: "Shipped", date: "1 hour ago" },
-    { id: "ORD-7318", customer: "Sneha Reddy", amount: 450, status: "Delivered", date: "3 hours ago" },
-    { id: "ORD-7317", customer: "Vikram Singh", amount: 3200, status: "Pending", date: "5 hours ago" },
-  ];
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [topCustomers, setTopCustomers] = useState([]);
+  const [healthStatus, setHealthStatus] = useState({
+    api: "Checking...",
+    database: "Checking...",
+    lastBackup: "2h ago"
+  });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        setLoading(true);
+        setStatsLoading(true);
         const res = await getProducts();
         const products = res.data;
-
         const totalProducts = products.length;
         const totalValue = products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0);
         const lowStock = products.filter(p => p.stock < 10).length;
         const categories = new Set(products.map(p => p.category)).size;
-
         setStats({ totalProducts, totalValue, lowStock, categories });
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
-        setLoading(false);
+        setStatsLoading(false);
       }
     };
+
+    const fetchOrders = async () => {
+      try {
+        setOrdersLoading(true);
+        const res = await allOrders(1, 5);
+        setRecentOrders(res.data.orders);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    const fetchCustomers = async () => {
+      try {
+        setCustomersLoading(true);
+        const res = await getTopCustomers(1, 5);
+        setTopCustomers(res.data);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      } finally {
+        setCustomersLoading(false);
+      }
+    };
+
+    const fetchHealth = async () => {
+      try {
+        setHealthLoading(true);
+        const res = await ping();
+        if (res.status === 200) {
+          setHealthStatus(prev => ({ ...prev, api: "Operational", database: "Healthy" }));
+        } else {
+          setHealthStatus(prev => ({ ...prev, api: "Issues Detected", database: "Degraded" }));
+        }
+      } catch (error) {
+        setHealthStatus(prev => ({ ...prev, api: "Offline", database: "Unknown" }));
+      } finally {
+        setHealthLoading(false);
+      }
+    };
+
     fetchStats();
+    fetchOrders();
+    fetchCustomers();
+    fetchHealth();
+    setInterval(fetchHealth, 5000);
   }, []);
 
   const getStatusColor = (status) => {
@@ -80,15 +129,19 @@ function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             {[
               { label: "Total Products", value: stats.totalProducts, icon: FiBox, color: "text-blue-600", bg: "bg-blue-50" },
-              { label: "Total Revenue", value: `$${stats.totalValue.toLocaleString()}`, icon: FiTrendingUp, color: "text-green-600", bg: "bg-green-50" },
+              { label: "Total Revenue", value: `₹ ${stats.totalValue.toLocaleString()}`, icon: FiTrendingUp, color: "text-green-600", bg: "bg-green-50" },
               { label: "Low Stock Alert", value: stats.lowStock, icon: FiAlertCircle, color: "text-red-600", bg: "bg-red-50" },
               { label: "Store Categories", value: stats.categories, icon: FiTag, color: "text-purple-600", bg: "bg-purple-50" },
             ].map((stat, idx) => (
               <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "..." : stat.value}</p>
+                    {statsLoading ? (
+                      <div className="h-8 w-24 bg-gray-200 rounded-lg animate-pulse mt-1"></div>
+                    ) : (
+                      <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                    )}
                   </div>
                   <div className={`p-3 ${stat.bg} ${stat.color} rounded-xl group-hover:scale-110 transition-transform`}>
                     <stat.icon size={24} />
@@ -109,7 +162,7 @@ function Dashboard() {
                     </div>
                     <h2 className="text-xl font-bold text-gray-800">Recent Orders</h2>
                   </div>
-                  <button className="text-purple-600 font-semibold text-sm hover:underline flex items-center gap-1">
+                  <button onClick={() => router.push("/dashboard/orders")} className="text-purple-600 font-semibold text-sm hover:underline flex items-center gap-1">
                     View All <FiArrowRight size={14} />
                   </button>
                 </div>
@@ -126,19 +179,33 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {recentOrders.map((order) => (
-                        <tr key={order.id} className="hover:bg-gray-50/50 transition-colors group">
-                          <td className="px-8 py-5 font-mono text-sm text-gray-600">{order.id}</td>
-                          <td className="px-8 py-5 font-bold text-gray-900">{order.customer}</td>
-                          <td className="px-8 py-5 text-center font-semibold text-gray-900">${order.amount}</td>
-                          <td className="px-8 py-5 text-center">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="px-8 py-5 text-right text-sm text-gray-500">{order.date}</td>
-                        </tr>
-                      ))}
+                      {ordersLoading ? (
+                        [...Array(5)].map((_, i) => (
+                          <tr key={i} className="animate-pulse">
+                            <td className="px-8 py-5"><div className="h-4 w-20 bg-gray-100 rounded"></div></td>
+                            <td className="px-8 py-5"><div className="h-4 w-32 bg-gray-100 rounded"></div></td>
+                            <td className="px-8 py-5"><div className="h-4 w-16 bg-gray-100 rounded mx-auto"></div></td>
+                            <td className="px-8 py-5"><div className="h-6 w-20 bg-gray-100 rounded-full mx-auto"></div></td>
+                            <td className="px-8 py-5"><div className="h-4 w-24 bg-gray-100 rounded ml-auto"></div></td>
+                          </tr>
+                        ))
+                      ) : (
+                        recentOrders.map((order) => (
+                          <tr key={order._id} className="hover:bg-gray-50/50 transition-colors group">
+                            <td className="px-8 py-5 font-mono text-sm text-gray-600">#{order._id.slice(-8).toUpperCase()}</td>
+                            <td className="px-8 py-5 font-bold text-gray-900">{order.user?.name || "Guest"}</td>
+                            <td className="px-8 py-5 text-center font-semibold text-gray-900">₹ {order.totalPrice.toLocaleString()}</td>
+                            <td className="px-8 py-5 text-center">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus)}`}>
+                                {order.orderStatus}
+                              </span>
+                            </td>
+                            <td className="px-8 py-5 text-right text-sm text-gray-500">
+                              {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -173,24 +240,35 @@ function Dashboard() {
                   Top Customers
                 </h3>
                 <div className="space-y-6">
-                  {[
-                    { name: "Rahul Sharma", orders: 12, spent: 15400 },
-                    { name: "Priya Patel", orders: 9, spent: 8200 },
-                    { name: "Vikram Singh", orders: 7, spent: 6100 },
-                  ].map((cust, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700">
-                          {cust.name[0]}
+                  {customersLoading ? (
+                    [...Array(3)].map((_, i) => (
+                      <div key={i} className="flex items-center justify-between animate-pulse">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-100"></div>
+                          <div className="space-y-2">
+                            <div className="h-3 w-24 bg-gray-100 rounded"></div>
+                            <div className="h-2 w-16 bg-gray-100 rounded"></div>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-gray-900 text-sm">{cust.name}</p>
-                          <p className="text-xs text-gray-500">{cust.orders} Orders</p>
-                        </div>
+                        <div className="h-4 w-12 bg-gray-100 rounded"></div>
                       </div>
-                      <p className="font-bold text-gray-900 text-sm">${cust.spent.toLocaleString()}</p>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    topCustomers.map((cust, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700">
+                            {cust.user.name[0]}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 text-sm">{cust.user.name}</p>
+                            <p className="text-xs text-gray-500">{cust.orderCount} Orders</p>
+                          </div>
+                        </div>
+                        <p className="font-bold text-gray-900 text-sm">₹ {cust.totalSpent.toLocaleString()}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -202,15 +280,23 @@ function Dashboard() {
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between text-sm">
                     <span className="text-purple-100">API Status</span>
-                    <span className="font-bold">Operational</span>
+                    {healthLoading ? (
+                      <div className="h-4 w-20 bg-white/20 rounded animate-pulse"></div>
+                    ) : (
+                      <span className="font-bold">{healthStatus.api}</span>
+                    )}
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-purple-100">Database</span>
-                    <span className="font-bold">Healthy</span>
+                    {healthLoading ? (
+                      <div className="h-4 w-16 bg-white/20 rounded animate-pulse"></div>
+                    ) : (
+                      <span className="font-bold">{healthStatus.database}</span>
+                    )}
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-purple-100">Last Backup</span>
-                    <span className="font-bold">2h ago</span>
+                    <span className="font-bold">{healthStatus.lastBackup}</span>
                   </div>
                 </div>
                 <button className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">

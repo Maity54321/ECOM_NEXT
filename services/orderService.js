@@ -25,8 +25,8 @@ export function getUserOrderDetails(id) {
   });
 }
 
-export function allOrders() {
-  return http.get(`${APIUrl}/api/v1/orders/allOrders`, {
+export function allOrders(page, limit) {
+  return http.get(`${APIUrl}/api/v1/orders/allOrders?page=${page}&limit=${limit}`, {
     headers: {
       authorization: localStorage.getItem("token"),
     },
@@ -43,6 +43,14 @@ export function updateOrderStatus(id, status) {
 
 export function adminDeleteOrder(id) {
   return http.delete(`${APIUrl}/api/v1/orders/${id}`, {
+    headers: {
+      authorization: localStorage.getItem("token"),
+    },
+  });
+}
+
+export function getTopCustomers(page, limit) {
+  return http.get(`${APIUrl}/api/v1/orders/topCustomers?page=${page}&limit=${limit}`, {
     headers: {
       authorization: localStorage.getItem("token"),
     },
