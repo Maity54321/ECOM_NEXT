@@ -4,49 +4,67 @@ import React, { useEffect, useState } from "react";
 import { getProducts } from "@/services/productService";
 import { useParams } from "next/navigation";
 import Records from "@/components/Home/Records";
-import Pagination from "react-js-pagination";
+import InfiniteScroll from "react-infinite-scroll-component";
 import Slider from "@mui/material/Slider";
-import Typography from "@mui/material/Typography";
 import Loading from "@/components/Loading/Loading";
 import { FiFilter, FiTag } from "react-icons/fi";
 
 const categories = ["All", "Mobiles", "Monitors", "Laptops"];
 
 const AllProducts = () => {
-  const [allProducts, setAllProducts] = useState([]);
+  const [productsList, setProductsList] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [recordsPerPage, setRecordsPerPage] = useState(8);
+  const [recordsPerPage, setRecordsPerPage] = useState(10);
   const [price, setPrice] = useState([0, 99999]);
   const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = allProducts.slice(
-    indexOfFirstRecord,
-    indexOfLastRecord
-  );
+  // const indexOfLastRecord = currentPage * recordsPerPage;
+  // const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  // const currentRecords = allProducts.slice(
+  //   indexOfFirstRecord,
+  //   indexOfLastRecord
+  // );
 
   const params = useParams();
   const keyword = params?.keyword;
 
-  const products = async () => {
+  const fetchProducts = async (page, append = false) => {
     try {
-      const result = await getProducts(keyword, price, category);
-      setAllProducts(result.data);
+      const result = await getProducts(keyword, price, category, page, recordsPerPage);
+      const newProducts = result.data.showProducts || [];
+
+      if (append) {
+        setProductsList((prev) => [...prev, ...newProducts]);
+      } else {
+        setProductsList(newProducts);
+      }
+
+      setHasMore(newProducts.length === recordsPerPage);
       setLoading(false);
     } catch (error) {
       // console.log(error.response.data);
     }
   };
 
+  const fetchMoreData = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchProducts(nextPage, true);
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth > 1366) {
       setRecordsPerPage(12);
     }
-    products();
-    window.scrollTo(0, 0);
-  }, [keyword, price, category]);
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    setCurrentPage(1);
+    fetchProducts(1, false);
+  }, [keyword, price, category, recordsPerPage]);
 
   const handleCategory = (cat) => {
     cat === category || category === "" ? setLoading(false) : setLoading(true);
@@ -57,6 +75,7 @@ const AllProducts = () => {
 
   const priceHandler = (event, newPrice) => {
     setPrice(newPrice);
+    setCurrentPage(1);
   };
 
   return (
@@ -112,11 +131,10 @@ const AllProducts = () => {
                       <li
                         key={index}
                         onClick={() => handleCategory(item)}
-                        className={`px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 text-sm font-medium ${
-                          isActive
-                            ? "bg-purple-50 text-purple-700 shadow-sm"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        }`}
+                        className={`px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 text-sm font-medium ${isActive
+                          ? "bg-purple-50 text-purple-700 shadow-sm"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          }`}
                       >
                         {item}
                       </li>
@@ -127,27 +145,29 @@ const AllProducts = () => {
             </div>
           </div>
           <div className="w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6 mt-16 px-4">
-              <Records data={currentRecords} />
-            </div>
-            <div className="w-full flex justify-center items-center mt-8">
-              {recordsPerPage < allProducts.length && (
-                <Pagination
-                  activePage={currentPage}
-                  itemsCountPerPage={recordsPerPage}
-                  totalItemsCount={allProducts.length}
-                  onChange={setCurrentPage}
-                  nextPageText={"Next"}
-                  prevPageText={"Prev"}
-                  firstPageText={"1st"}
-                  lastPageText={"Last"}
-                  itemClass="page-item"
-                  linkClass="page-link"
-                  activeClass="pageItemActive"
-                  activeLinkClass="pageLinkActive"
-                />
-              )}
-            </div>
+            <InfiniteScroll
+              dataLength={productsList.length}
+              next={fetchMoreData}
+              hasMore={hasMore}
+              loader={
+                <div className="w-full flex justify-center py-12">
+                  <div className="loading !h-12 !w-12 !border-b-2"></div>
+                </div>
+              }
+              endMessage={
+                <div className="w-full flex flex-col items-center justify-center py-16 space-y-4">
+                  <div className="h-px w-24 bg-slate-200" />
+                  <p className="text-slate-400 font-medium text-sm tracking-wide">
+                    YOU'VE REACHED THE END
+                  </p>
+                  <div className="h-px w-24 bg-slate-200" />
+                </div>
+              }
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6 mt-16 px-4">
+                <Records data={productsList} />
+              </div>
+            </InfiniteScroll>
           </div>
         </div>
       )}

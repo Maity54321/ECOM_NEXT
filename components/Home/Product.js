@@ -11,13 +11,13 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [recordsPerPage, setRecordsPerPage] = useState(12);
 
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = products.slice(indexOfFirstRecord, indexOfLastRecord);
+  // const indexOfLastRecord = currentPage * recordsPerPage;
+  // const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  // const currentRecords = products.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const getAllProducts = async () => {
-    const res = await getProducts();
-    setProducts(res.data);
+    const res = await getProducts("", [0, 99999], "", 1, recordsPerPage);
+    setProducts(res.data.showProducts);
     setLoading(false);
   };
 
@@ -35,7 +35,7 @@ const Product = () => {
         <Loading />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-6 px-4 md:px-8 w-full mb-20">
-          <Records data={currentRecords} />
+          <Records data={products} />
         </div>
       )}
     </>

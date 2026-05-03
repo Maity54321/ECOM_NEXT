@@ -4,37 +4,53 @@ import React, { useEffect, useState, useMemo } from "react";
 import { deleteProduct, getProducts } from "@/services/productService";
 import { FiEdit3, FiTrash2 } from "react-icons/fi";
 import { BiSearchAlt } from "react-icons/bi";
+import InfiniteScroll from "react-infinite-scroll-component";
 import Link from "next/link";
 import swal from "sweetalert";
 import Navbars from "./Navbars";
 
 const ViewProducts = () => {
-  const [products, setProducts] = useState([]);
+  const [productsList, setProductsList] = useState([]);
   const [searchInput, setSearchInput] = useState("");
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recordsPerPage] = useState(15);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const res = await getProducts();
-        setProducts(res.data);
-      } catch (error) {
-        console.error("Error fetching products:", error?.response?.data || error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+  const fetchProducts = async (page, append = false, query = "") => {
+    try {
+      if (!append) setLoading(true);
+      const res = await getProducts(query, [0, 99999], "", page, recordsPerPage);
+      const newProducts = res.data.showProducts || [];
 
-  const filteredProducts = useMemo(() => {
-    if (!searchInput) return products;
-    return products.filter((item) =>
-      item.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-      item._id.toLowerCase().includes(searchInput.toLowerCase())
-    );
-  }, [products, searchInput]);
+      if (append) {
+        setProductsList((prev) => [...prev, ...newProducts]);
+      } else {
+        setProductsList(newProducts);
+      }
+
+      setHasMore(newProducts.length === recordsPerPage);
+    } catch (error) {
+      console.error("Error fetching products:", error?.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMoreData = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchProducts(nextPage, true, searchInput);
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setCurrentPage(1);
+      fetchProducts(1, false, searchInput);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchInput]);
 
   const productDelete = async (id) => {
     swal({
@@ -47,7 +63,7 @@ const ViewProducts = () => {
       if (willDelete) {
         try {
           await deleteProduct(id);
-          setProducts((prev) => prev.filter((item) => item._id !== id));
+          setProductsList((prev) => prev.filter((item) => item._id !== id));
           swal("Poof! Your product has been deleted!", {
             icon: "success",
           });
@@ -113,54 +129,72 @@ const ViewProducts = () => {
             </div>
 
             {/* Table Body */}
-            <div className="divide-y divide-gray-100">
-              {loading ? (
+            <div className="divide-y divide-gray-100 min-h-[400px]">
+              {loading && productsList.length === 0 ? (
                 <div className="p-20 text-center">
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent"></div>
                   <p className="mt-4 text-gray-500 font-medium">Loading products...</p>
                 </div>
-              ) : filteredProducts.length > 0 ? (
-                filteredProducts.map((item) => (
-                  <div
-                    key={item._id}
-                    className="grid grid-cols-12 py-5 px-6 items-center hover:bg-gray-50/80 transition-colors group"
-                  >
-                    <div className="col-span-4 lg:col-span-5">
-                      <div className="font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
-                        {item.name}
+              ) : productsList.length > 0 ? (
+                <InfiniteScroll
+                  dataLength={productsList.length}
+                  next={fetchMoreData}
+                  hasMore={hasMore}
+                  loader={
+                    <div className="p-10 text-center">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-purple-500 border-t-transparent"></div>
+                    </div>
+                  }
+                  endMessage={
+                    <div className="p-8 text-center bg-gray-50/50">
+                      <p className="text-gray-400 text-sm font-medium">No more products to show</p>
+                    </div>
+                  }
+                >
+                  <div className="divide-y divide-gray-100">
+                    {productsList.map((item) => (
+                      <div
+                        key={item._id}
+                        className="grid grid-cols-12 py-5 px-6 items-center hover:bg-gray-50/80 transition-colors group"
+                      >
+                        <div className="col-span-4 lg:col-span-5">
+                          <div className="font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
+                            {item.name}
+                          </div>
+                        </div>
+
+                        <div className="col-span-4 lg:col-span-3 text-center hidden md:block">
+                          <code className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-500 font-mono">
+                            {item._id.slice(-8)}...
+                          </code>
+                        </div>
+
+                        <div className="col-span-4 lg:col-span-2 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStockBadge(item.stock)}`}>
+                            {getStockLabel(item.stock)}
+                          </span>
+                        </div>
+
+                        <div className="col-span-4 lg:col-span-2 flex flex-row justify-end items-center gap-4">
+                          <Link
+                            href={`/account/updateproduct/${item._id}`}
+                            className="p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                            title="Edit Product"
+                          >
+                            <FiEdit3 size={18} />
+                          </Link>
+                          <button
+                            className="p-2.5 text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                            onClick={() => productDelete(item._id)}
+                            title="Delete Product"
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="col-span-4 lg:col-span-3 text-center hidden md:block">
-                      <code className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-500 font-mono">
-                        {item._id.slice(-8)}...
-                      </code>
-                    </div>
-
-                    <div className="col-span-4 lg:col-span-2 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStockBadge(item.stock)}`}>
-                        {getStockLabel(item.stock)}
-                      </span>
-                    </div>
-
-                    <div className="col-span-4 lg:col-span-2 flex flex-row justify-end items-center gap-4">
-                      <Link
-                        href={`/account/updateproduct/${item._id}`}
-                        className="p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-                        title="Edit Product"
-                      >
-                        <FiEdit3 size={18} />
-                      </Link>
-                      <button
-                        className="p-2.5 text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-                        onClick={() => productDelete(item._id)}
-                        title="Delete Product"
-                      >
-                        <FiTrash2 size={18} />
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ))
+                </InfiniteScroll>
               ) : (
                 <div className="p-20 text-center">
                   <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getProducts } from "@/services/productService";
+import { getDashboardInfo, getProducts } from "@/services/productService";
 import { allOrders, getTopCustomers } from "@/services/orderService";
 import { ping } from "@/services/healthCheck.service";
 import Navbars from "./Navbars";
-import { FiBox, FiTrendingUp, FiAlertCircle, FiTag, FiShoppingBag, FiUsers, FiArrowRight, FiExternalLink } from "react-icons/fi";
+import { FiBox, FiTrendingUp, FiAlertCircle, FiTag, FiShoppingBag, FiUsers, FiArrowRight, FiExternalLink, FiXCircle } from "react-icons/fi";
 import { HiOutlineDocumentReport } from "react-icons/hi";
 import { useRouter } from "next/navigation";
 
@@ -15,6 +15,7 @@ function Dashboard() {
     totalProducts: 0,
     totalValue: 0,
     lowStock: 0,
+    outOfStock: 0,
     categories: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
@@ -34,13 +35,13 @@ function Dashboard() {
     const fetchStats = async () => {
       try {
         setStatsLoading(true);
-        const res = await getProducts();
-        const products = res.data;
-        const totalProducts = products.length;
-        const totalValue = products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0);
-        const lowStock = products.filter(p => p.stock < 10).length;
-        const categories = new Set(products.map(p => p.category)).size;
-        setStats({ totalProducts, totalValue, lowStock, categories });
+        const res = await getDashboardInfo();
+        const totalProducts = res.data.productCount;
+        const totalValue = res.data.totalRevenue;
+        const lowStock = res.data.lowStock;
+        const outOfStock = res.data.outOfStock;
+        const categories = res.data.totalCategories;
+        setStats({ totalProducts, totalValue, lowStock, outOfStock, categories });
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
@@ -92,7 +93,7 @@ function Dashboard() {
     fetchOrders();
     fetchCustomers();
     fetchHealth();
-    setInterval(fetchHealth, 5000);
+    // setInterval(fetchHealth, 5000);
   }, []);
 
   const getStatusColor = (status) => {
@@ -126,12 +127,13 @@ function Dashboard() {
           </div>
 
           {/* Statistics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
             {[
               { label: "Total Products", value: stats.totalProducts, icon: FiBox, color: "text-blue-600", bg: "bg-blue-50" },
               { label: "Total Revenue", value: `₹ ${stats.totalValue.toLocaleString()}`, icon: FiTrendingUp, color: "text-green-600", bg: "bg-green-50" },
-              { label: "Low Stock Alert", value: stats.lowStock, icon: FiAlertCircle, color: "text-red-600", bg: "bg-red-50" },
-              { label: "Store Categories", value: stats.categories, icon: FiTag, color: "text-purple-600", bg: "bg-purple-50" },
+              { label: "Low Stock", value: stats.lowStock, icon: FiAlertCircle, color: "text-orange-600", bg: "bg-orange-50" },
+              { label: "Out of Stock", value: stats.outOfStock, icon: FiXCircle, color: "text-red-600", bg: "bg-red-50" },
+              { label: "Categories", value: stats.categories, icon: FiTag, color: "text-purple-600", bg: "bg-purple-50" },
             ].map((stat, idx) => (
               <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
                 <div className="flex items-center justify-between">
@@ -140,7 +142,7 @@ function Dashboard() {
                     {statsLoading ? (
                       <div className="h-8 w-24 bg-gray-200 rounded-lg animate-pulse mt-1"></div>
                     ) : (
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                      <p className="text-xl font-bold text-gray-900 mt-1">{stat.value}</p>
                     )}
                   </div>
                   <div className={`p-3 ${stat.bg} ${stat.color} rounded-xl group-hover:scale-110 transition-transform`}>

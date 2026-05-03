@@ -1,14 +1,14 @@
 import http from "./httpService";
 import { APIUrl } from "./link";
 
-export function getProducts(keyword = "", price = [0, 99999], category) {
+export function getProducts(keyword = "", price = [0, 99999], category, page, limit) {
   let myAPIUrl = "";
   if (keyword && price) {
-    myAPIUrl = `${APIUrl}/api/v1/products?keyword=${keyword}&price[gte]=${price[0]}&price[lte]=${price[1]}`;
+    myAPIUrl = `${APIUrl}/api/v1/products?keyword=${keyword}&price[gte]=${price[0]}&price[lte]=${price[1]}&page=${page}&limit=${limit}`;
   } else if (category) {
-    myAPIUrl = `${APIUrl}/api/v1/products?keyword=${keyword}&price[gte]=${price[0]}&price[lte]=${price[1]}&category=${category}`;
+    myAPIUrl = `${APIUrl}/api/v1/products?keyword=${keyword}&price[gte]=${price[0]}&price[lte]=${price[1]}&category=${category}&page=${page}&limit=${limit}`;
   } else {
-    myAPIUrl = `${APIUrl}/api/v1/products?keyword=${keyword}&price[gte]=${price[0]}&price[lte]=${price[1]}`;
+    myAPIUrl = `${APIUrl}/api/v1/products?keyword=${keyword}&price[gte]=${price[0]}&price[lte]=${price[1]}&page=${page}&limit=${limit}`;
   }
   return http.get(myAPIUrl);
 }
@@ -58,6 +58,14 @@ export function updateProduct(product) {
 
 export function submitReview(reviewData) {
   return http.put(`${APIUrl}/api/v1/products/review/` + reviewData.productId, reviewData, {
+    headers: {
+      authorization: localStorage.getItem("token"),
+    },
+  });
+}
+
+export function getDashboardInfo() {
+  return http.get(`${APIUrl}/api/v1/products/admin/dashboardInfo`, {
     headers: {
       authorization: localStorage.getItem("token"),
     },
