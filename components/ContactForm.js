@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPaperPlane } from 'react-icons/fa';
 import { submitFeedback } from '@/services/feedback.service';
 import { toast } from 'react-toastify';
 import { useAuth } from './AuthProvider';
+import { useRouter } from 'next/navigation';
 
 export default function ContactForm() {
   const { user } = useAuth();
-  const ref = useRef();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: '',
@@ -62,6 +63,7 @@ export default function ContactForm() {
         subject: '',
         message: ''
       });
+      router.push("/");
     } catch (error) {
       console.error('Error submitting feedback:', error);
       // toast.error is already handled by httpService interceptor for unexpected errors, 
@@ -83,7 +85,6 @@ export default function ContactForm() {
               id="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              ref={ref}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 outline-none"
               placeholder="John"
               required
@@ -97,7 +98,6 @@ export default function ContactForm() {
               id="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              ref={ref}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 outline-none"
               placeholder="Doe"
               disabled={user ? true : false}
@@ -112,7 +112,6 @@ export default function ContactForm() {
             id="email"
             value={formData.email}
             onChange={handleChange}
-            ref={ref}
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 outline-none"
             placeholder="john@example.com"
             required

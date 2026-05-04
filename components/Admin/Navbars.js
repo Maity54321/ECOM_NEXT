@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FiGrid, FiPlusSquare, FiList, FiLogOut, FiMenu, FiX, FiUser, FiShoppingCart } from "react-icons/fi";
+import { FiGrid, FiPlusSquare, FiList, FiLogOut, FiMenu, FiX, FiUser, FiShoppingCart, FiUsers } from "react-icons/fi";
 
 function Navbars({ children }) {
   const router = useRouter();
@@ -20,6 +20,7 @@ function Navbars({ children }) {
     { name: "Create Product", path: "/account/createproduct", icon: FiPlusSquare },
     { name: "View Products", path: "/account/viewproducts", icon: FiList },
     { name: "Orders", path: "/dashboard/orders", icon: FiShoppingCart },
+    { name: "Users", path: "/dashboard/users", icon: FiUsers },
   ];
 
   const isActive = (path) => pathname === path;
@@ -77,47 +78,11 @@ function Navbars({ children }) {
               </Link>
             ))}
           </nav>
-
-          {/* Bottom Section */}
-          {/* <div className="p-6 border-t border-gray-50">
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all duration-200"
-            >
-              <FiLogOut size={20} />
-              Logout Session
-            </button>
-          </div> */}
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        {/* <header className="my-5 h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shrink-0">
-          <div className="flex items-center gap-4">
-            <button
-              className="lg:hidden p-2 text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <FiMenu size={24} />
-            </button>
-            <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
-              {navLinks.find(l => isActive(l.path))?.name || "Settings"}
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-sm font-bold text-gray-900">Admin User</span>
-              <span className="text-xs text-gray-500 font-medium tracking-wide uppercase">Store Manager</span>
-            </div>
-            <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 border border-gray-200 shadow-sm">
-              <FiUser size={20} />
-            </div>
-          </div>
-        </header> */}
-
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-gray-50/50">
           {children}
@@ -128,4 +93,3 @@ function Navbars({ children }) {
 }
 
 export default Navbars;
-

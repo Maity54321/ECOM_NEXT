@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Joi from "joi-browser";
-import { loginUser, registerUser } from "@/services/userService";
+import { loginUser, registerUser } from "@/services/authService";
 import { toast } from "react-toastify";
 import Account from "./Account";
 import { decodeToken } from "react-jwt";

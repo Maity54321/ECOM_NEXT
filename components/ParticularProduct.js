@@ -4,12 +4,10 @@ import React, { useEffect, useState } from "react";
 import { getParticularProduct } from "@/services/productService";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import { createCart } from "@/services/cartService";
 import Loading from "@/components/Loading/Loading";
 import { FaCartPlus, FaBolt, FaMinus, FaPlus, FaShieldAlt, FaTruck, FaRedoAlt } from "react-icons/fa";
 import { HiOutlineBadgeCheck } from "react-icons/hi";
-
 import { Rating, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
 import { submitReview } from "@/services/productService";
 import { toast } from "react-toastify";
@@ -26,6 +24,7 @@ function ParticularProduct() {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [showCartSlider, setShowCartSlider] = useState(false);
 
   useEffect(() => {
     try {
@@ -69,7 +68,7 @@ function ParticularProduct() {
       price: product.price,
     };
     await createCart(cart);
-    router.push("/cart");
+    setShowCartSlider(true);
   };
 
   const handleBuyNow = () => {
@@ -340,6 +339,49 @@ function ParticularProduct() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Add to Cart Slider */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 transform transition-all duration-500 ease-in-out ${showCartSlider ? "translate-y-0" : "translate-y-full"
+          }`}
+      >
+        <div className="mx-auto max-w-4xl mb-8 px-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[2.5rem] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+            {/* Background Decorative Element */}
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-purple-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+
+            <div className="flex items-center gap-6 relative z-10">
+              <div className="w-20 h-20 bg-gray-50 rounded-2xl p-2 border border-gray-100 flex-shrink-0 flex items-center justify-center">
+                <img
+                  src={product.images?.imgUrl}
+                  alt={product.name}
+                  className="max-w-full max-h-full object-contain mix-blend-multiply"
+                />
+              </div>
+              <div>
+                <p className="text-[#6E35AE] font-black text-xs uppercase tracking-widest mb-1">Success!</p>
+                <h4 className="text-gray-900 font-bold text-lg line-clamp-1">{product.name}</h4>
+                <p className="text-gray-400 text-sm font-medium">Added to your shopping cart</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 w-full md:w-auto relative z-10">
+              <button
+                onClick={() => setShowCartSlider(false)}
+                className="flex-1 md:flex-none px-8 py-4 bg-gray-50 text-gray-500 font-bold rounded-2xl hover:bg-gray-100 transition-all active:scale-95 border border-gray-100"
+              >
+                Close
+              </button>
+              <Link
+                href="/cart"
+                className="flex-1 md:flex-none px-10 py-4 bg-[#6E35AE] text-white font-bold rounded-2xl hover:bg-[#5a2b8f] transition-all active:scale-95 shadow-lg shadow-purple-200 text-center"
+              >
+                Go to Cart
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

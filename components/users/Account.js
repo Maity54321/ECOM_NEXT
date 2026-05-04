@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Loading from "@/components/Loading/Loading";
-import { deleteUser } from "@/services/profileService";
+import { deleteUser } from "@/services/user.service";
 import {
   FaUser,
   FaEnvelope,
@@ -174,7 +174,7 @@ function Account({ userProfile, logout }) {
               </div>
               <h4 className="text-xl font-bold text-gray-900">Ready to shop?</h4>
               <p className="text-gray-500 mt-2 max-w-sm">Check out our latest products and exclusive deals just for you.</p>
-              <button 
+              <button
                 onClick={() => router.push("/product")}
                 className="mt-6 text-[#6E35AE] font-bold hover:underline"
               >
