@@ -36,15 +36,14 @@ const UserManagement = () => {
         fetchUsers();
     }, []);
 
-    const handleToggleRole = async (userId, currentRole) => {
-        const newRole = currentRole === "admin" ? "user" : "admin";
+    const handleToggleRole = async (userId, isAdmin) => {
+        const newRole = isAdmin === false ? "admin" : "user";
         try {
             const response = await updateUserRole(userId, newRole);
-            console.log(response);
             if (response.status === 200 || response.data.success) {
                 toast.success(`Role updated to ${newRole}`);
                 setUsers(users.map(user =>
-                    user._id === userId ? { ...user, role: newRole } : user
+                    user._id === userId ? { ...user, isAdmin: !isAdmin } : user
                 ));
             }
         } catch (error) {
@@ -78,8 +77,8 @@ const UserManagement = () => {
 
     const stats = [
         { title: "Total Users", value: users.length, icon: FiUsers, color: "bg-blue-50 text-blue-600" },
-        { title: "Admins", value: users.filter(u => u.role === "admin").length, icon: FiShield, color: "bg-purple-50 text-purple-600" },
-        { title: "Regular Users", value: users.filter(u => u.role === "user").length, icon: FiUser, color: "bg-green-50 text-green-600" },
+        { title: "Admins", value: users.filter(u => u.isAdmin === true).length, icon: FiShield, color: "bg-purple-50 text-purple-600" },
+        { title: "Regular Users", value: users.filter(u => u.isAdmin === false).length, icon: FiUser, color: "bg-green-50 text-green-600" },
     ];
 
     if (loading && users.length === 0) {
@@ -173,12 +172,12 @@ const UserManagement = () => {
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${user.role === "admin"
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${user.isAdmin === true
                                             ? "bg-purple-100 text-purple-700"
                                             : "bg-gray-100 text-gray-600"
                                             }`}>
-                                            {user.role === "admin" ? <FiShield size={12} /> : <FiUser size={12} />}
-                                            {user.role}
+                                            {user.isAdmin === true ? <FiShield size={12} /> : <FiUser size={12} />}
+                                            {user.isAdmin === true ? "Admin" : "User"}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 text-sm font-bold text-gray-500">
@@ -187,7 +186,7 @@ const UserManagement = () => {
                                     <td className="px-8 py-6">
                                         <div className="flex items-center justify-end gap-2">
                                             <button
-                                                onClick={() => handleToggleRole(user._id, user.role)}
+                                                onClick={() => handleToggleRole(user._id, user.isAdmin)}
                                                 className="p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
                                                 title="Toggle Role"
                                             >
