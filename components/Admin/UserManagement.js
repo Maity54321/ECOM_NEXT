@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FiSearch, FiEdit2, FiTrash2, FiUser, FiShield, FiUserPlus, FiUsers } from "react-icons/fi";
+import { FiSearch, FiEdit2, FiTrash2, FiUser, FiShield, FiUserPlus, FiUsers, FiShieldOff } from "react-icons/fi";
+import { FaShield } from "react-icons/fa6";
 import { toast } from "react-toastify";
 import { getAllUsers, updateUserRole, deleteUser } from "@/services/user.service";
 import Loading from "@/components/Loading/Loading";
@@ -190,7 +191,7 @@ const UserManagement = () => {
                                                 className="p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
                                                 title="Toggle Role"
                                             >
-                                                <FiEdit2 size={18} />
+                                                {user.isAdmin === true ? <FaShield className="text-purple-700" size={18} /> : <FiShieldOff size={18} />}
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteUser(user._id)}

@@ -3,10 +3,11 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Input from "@/components/common/Input";
-import { createProduct } from "@/services/productService";
+import { createProduct, getCategories } from "@/services/productService";
 import { toast } from "react-toastify";
 import Joi from "joi-browser";
 import Navbars from "./Navbars";
+import { useEffect, useRef } from "react";
 
 function CreateProduct() {
   const [product, setProduct] = useState({
@@ -19,7 +20,33 @@ function CreateProduct() {
   const [errors, setErrors] = useState({});
   const [images, setImages] = useState("");
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const dropdownRef = useRef(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const result = await getCategories();
+        setCategories(result.data.categories || []);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const productSchema = {
     name: Joi.string().required().label("Product Name"),
@@ -52,6 +79,42 @@ function CreateProduct() {
         setErrors(newErrors);
       }
       setProduct({ ...product, [e.target.name]: e.target.value });
+      if (e.target.name === "category") {
+        setShowDropdown(true);
+      }
+    }
+  };
+
+  const handleCategorySelect = (selectedCategory) => {
+    setProduct({ ...product, category: selectedCategory });
+    setShowDropdown(false);
+    setActiveIndex(-1);
+    // Clear error if selection is valid
+    const newErrors = { ...errors };
+    delete newErrors.category;
+    setErrors(newErrors);
+  };
+
+  const handleKeyDown = (e) => {
+    const filtered = categories.filter(cat =>
+      cat.toLowerCase().includes(product.category.toLowerCase())
+    );
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex(prev => (prev < filtered.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
+    } else if (e.key === "Enter") {
+      if (activeIndex >= 0 && activeIndex < filtered.length) {
+        e.preventDefault();
+        handleCategorySelect(filtered[activeIndex]);
+      } else {
+        setShowDropdown(false);
+      }
+    } else if (e.key === "Escape") {
+      setShowDropdown(false);
     }
   };
 
@@ -93,7 +156,7 @@ function CreateProduct() {
     }
   };
 
-  const renderInput = (inputName, type, placeholder) => {
+  const renderInput = (inputName, type, placeholder, extraProps = {}) => {
     return (
       <Input
         name={inputName}
@@ -102,6 +165,7 @@ function CreateProduct() {
         value={product[inputName]}
         onChange={handleChange}
         error={errors[inputName]}
+        {...extraProps}
       />
     );
   };
@@ -141,9 +205,51 @@ function CreateProduct() {
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Price ($)</label>
               {renderInput("price", "number", "0.00")}
             </div>
-            <div className="w-full relative">
+            <div className="w-full relative" ref={dropdownRef}>
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Category</label>
-              {renderInput("category", "text", "e.g. Electronics")}
+              <div className="relative">
+                {renderInput("category", "text", "e.g. Electronics", { 
+                  onFocus: () => setShowDropdown(true),
+                  onKeyDown: handleKeyDown
+                })}
+                
+                {showDropdown && categories.length > 0 && (
+                  <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl shadow-purple-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {categories
+                        .filter(cat => 
+                          cat.toLowerCase().includes(product.category.toLowerCase())
+                        )
+                        .map((cat, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleCategorySelect(cat)}
+                            onMouseEnter={() => setActiveIndex(index)}
+                            className={`px-5 py-3 cursor-pointer transition-colors flex items-center justify-between group ${
+                              activeIndex === index ? "bg-purple-100" : "hover:bg-purple-50"
+                            }`}
+                          >
+                            <span className={`font-medium ${
+                              activeIndex === index ? "text-purple-700" : "text-gray-700 group-hover:text-purple-700"
+                            }`}>{cat}</span>
+                            <div className={`w-6 h-6 rounded-lg bg-white shadow-sm flex items-center justify-center transition-opacity ${
+                              activeIndex === index ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                            }`}>
+                              <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        ))}
+                      {categories.filter(cat => cat.toLowerCase().includes(product.category.toLowerCase())).length === 0 && (
+                        <div className="px-5 py-4 text-gray-400 text-sm italic">
+                          No matching categories. Press enter to create "{product.category}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

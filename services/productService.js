@@ -71,3 +71,7 @@ export function getDashboardInfo() {
     },
   });
 }
+
+export function getCategories() {
+  return http.get(`${APIUrl}/api/v1/products/category`);
+}

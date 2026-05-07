@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getProducts } from "@/services/productService";
+import { getCategories, getProducts } from "@/services/productService";
 import { useParams } from "next/navigation";
 import Records from "@/components/Home/Records";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -9,10 +9,11 @@ import Slider from "@mui/material/Slider";
 import Loading from "@/components/Loading/Loading";
 import { FiFilter, FiTag } from "react-icons/fi";
 
-const categories = ["All", "Mobiles", "Monitors", "Laptops"];
+// const categories = ["All", "Mobiles", "Monitors", "Laptops"];
 
 const AllProducts = () => {
   const [productsList, setProductsList] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10);
@@ -48,6 +49,15 @@ const AllProducts = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const result = await getCategories();
+      setCategories(["All", ...result.data.categories]);
+    } catch (error) {
+      // console.log(error.response.data);
+    }
+  };
+
   const fetchMoreData = () => {
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
@@ -64,6 +74,7 @@ const AllProducts = () => {
     setLoading(true);
     setCurrentPage(1);
     fetchProducts(1, false);
+    fetchCategories();
   }, [keyword, price, category, recordsPerPage]);
 
   const handleCategory = (cat) => {
