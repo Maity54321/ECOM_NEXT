@@ -72,6 +72,6 @@ export function getDashboardInfo() {
   });
 }
 
-export function getCategories() {
-  return http.get(`${APIUrl}/api/v1/products/category`);
+export function getFilterConfig() {
+  return http.get(`${APIUrl}/api/v1/products/filterConfig`);
 }

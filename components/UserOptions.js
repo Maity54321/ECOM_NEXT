@@ -53,15 +53,19 @@ const UserOptions = ({ user, handleLogout }) => {
 
   function account() {
     router.push("/account");
+    typeof window !== "undefined" && window.innerWidth < 600 && setOpen(false);
   }
   function cart() {
     router.push("/cart");
+    typeof window !== "undefined" && window.innerWidth < 600 && setOpen(false);
   }
   function dashboard() {
     router.push("/dashboard");
+    typeof window !== "undefined" && window.innerWidth < 600 && setOpen(false);
   }
   function orders() {
     router.push("/orders");
+    typeof window !== "undefined" && window.innerWidth < 600 && setOpen(false);
   }
 
   return (

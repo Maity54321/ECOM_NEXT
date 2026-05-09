@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Input from "@/components/common/Input";
-import { createProduct, getCategories } from "@/services/productService";
+import { createProduct, getFilterConfig } from "@/services/productService";
 import { toast } from "react-toastify";
 import Joi from "joi-browser";
 import Navbars from "./Navbars";
@@ -29,7 +29,7 @@ function CreateProduct() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const result = await getCategories();
+        const result = await getFilterConfig();
         setCategories(result.data.categories || []);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -172,14 +172,14 @@ function CreateProduct() {
 
   return (
     <Navbars>
-      <div className="min-h-screen py-10 px-4 flex justify-center items-start bg-gray-50 font-roboto">
+      <div className="min-h-screen py-6 md:py-10 px-4 flex justify-center items-start bg-gray-50/50 font-sans">
         <form
           onSubmit={handleCreateProduct}
-          className="w-full max-w-3xl flex flex-col items-center bg-white shadow-2xl shadow-purple-900/5 p-8 md:p-12 rounded-3xl border border-gray-100 [&_input]:w-full [&_input]:p-4 [&_input]:border [&_input]:border-gray-200 [&_input]:rounded-xl [&_input]:focus:ring-2 [&_input]:focus:ring-purple-500 [&_input]:focus:border-transparent [&_input]:outline-none [&_input]:transition-all [&_input]:bg-gray-50/50 hover:[&_input]:bg-gray-50 [&_input]:text-gray-800"
+          className="w-full max-w-3xl flex flex-col items-center bg-white shadow-xl shadow-gray-200/50 p-6 md:p-12 rounded-[2.5rem] border border-gray-100 [&_input]:w-full [&_input]:p-4 [&_input]:border [&_input]:border-gray-100 [&_input]:rounded-2xl [&_input]:focus:ring-4 [&_input]:focus:ring-purple-500/10 [&_input]:focus:border-purple-500 [&_input]:outline-none [&_input]:transition-all [&_input]:bg-gray-50/50 hover:[&_input]:bg-gray-50 [&_input]:text-gray-900 [&_input]:font-medium"
         >
           <div className="w-full text-center mb-10">
-            <h2 className="text-3xl font-bold text-gray-800">Add New Product</h2>
-            <p className="text-gray-500 mt-2">Fill in the details below to publish a new item</p>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Add New Product</h2>
+            <p className="text-gray-500 font-medium mt-2">Fill in the details below to publish a new item</p>
           </div>
 
           <div className="w-full mb-6 relative">
@@ -208,16 +208,16 @@ function CreateProduct() {
             <div className="w-full relative" ref={dropdownRef}>
               <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Category</label>
               <div className="relative">
-                {renderInput("category", "text", "e.g. Electronics", { 
+                {renderInput("category", "text", "e.g. Electronics", {
                   onFocus: () => setShowDropdown(true),
                   onKeyDown: handleKeyDown
                 })}
-                
+
                 {showDropdown && categories.length > 0 && (
                   <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl shadow-purple-900/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="max-h-60 overflow-y-auto custom-scrollbar">
                       {categories
-                        .filter(cat => 
+                        .filter(cat =>
                           cat.toLowerCase().includes(product.category.toLowerCase())
                         )
                         .map((cat, index) => (
@@ -225,16 +225,13 @@ function CreateProduct() {
                             key={index}
                             onClick={() => handleCategorySelect(cat)}
                             onMouseEnter={() => setActiveIndex(index)}
-                            className={`px-5 py-3 cursor-pointer transition-colors flex items-center justify-between group ${
-                              activeIndex === index ? "bg-purple-100" : "hover:bg-purple-50"
-                            }`}
+                            className={`px-5 py-3 cursor-pointer transition-colors flex items-center justify-between group ${activeIndex === index ? "bg-purple-100" : "hover:bg-purple-50"
+                              }`}
                           >
-                            <span className={`font-medium ${
-                              activeIndex === index ? "text-purple-700" : "text-gray-700 group-hover:text-purple-700"
-                            }`}>{cat}</span>
-                            <div className={`w-6 h-6 rounded-lg bg-white shadow-sm flex items-center justify-center transition-opacity ${
-                              activeIndex === index ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                            }`}>
+                            <span className={`font-medium ${activeIndex === index ? "text-purple-700" : "text-gray-700 group-hover:text-purple-700"
+                              }`}>{cat}</span>
+                            <div className={`w-6 h-6 rounded-lg bg-white shadow-sm flex items-center justify-center transition-opacity ${activeIndex === index ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                              }`}>
                               <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                               </svg>

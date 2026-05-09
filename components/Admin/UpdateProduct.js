@@ -114,14 +114,14 @@ function UpdateProduct() {
 
   return (
     <Navbars>
-      <div className="min-h-screen py-10 px-4 flex justify-center items-start bg-gray-50 font-roboto">
+      <div className="min-h-screen py-6 md:py-10 px-4 flex justify-center items-start bg-gray-50/50 font-sans">
         <form
           onSubmit={handleUpdateProduct}
-          className="w-full max-w-3xl flex flex-col items-center bg-white shadow-2xl shadow-purple-900/5 p-8 md:p-12 rounded-3xl border border-gray-100 [&_input]:w-full [&_input]:p-4 [&_input]:border [&_input]:border-gray-200 [&_input]:rounded-xl [&_input]:focus:ring-2 [&_input]:focus:ring-purple-500 [&_input]:focus:border-transparent [&_input]:outline-none [&_input]:transition-all [&_input]:bg-gray-50/50 hover:[&_input]:bg-gray-50 [&_input]:text-gray-800"
+          className="w-full max-w-3xl flex flex-col items-center bg-white shadow-xl shadow-gray-200/50 p-6 md:p-12 rounded-[2.5rem] border border-gray-100 [&_input]:w-full [&_input]:p-4 [&_input]:border [&_input]:border-gray-100 [&_input]:rounded-2xl [&_input]:focus:ring-4 [&_input]:focus:ring-purple-500/10 [&_input]:focus:border-purple-500 [&_input]:outline-none [&_input]:transition-all [&_input]:bg-gray-50/50 hover:[&_input]:bg-gray-50 [&_input]:text-gray-900 [&_input]:font-medium"
         >
           <div className="w-full text-center mb-10">
-            <h2 className="text-3xl font-bold text-gray-800">Update Product</h2>
-            <p className="text-gray-500 mt-2">Modify the details below to update the item</p>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Update Product</h2>
+            <p className="text-gray-500 font-medium mt-2">Modify the details below to update the item</p>
           </div>
 
           <div className="w-full mb-6 relative">

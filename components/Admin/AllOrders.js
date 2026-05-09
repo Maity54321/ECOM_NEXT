@@ -134,7 +134,7 @@ function AllOrders() {
       <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <div className="flex flex-col md:flex-row mt-8 items-center md:text-left text-center justify-between gap-6 mb-10">
             <div>
               <h1 className="text-3xl mt-3 font-extrabold text-gray-900 tracking-tight">Order Management</h1>
               <p className="text-gray-500 mt-2 text-lg">Manage, track and update all customer orders.</p>
@@ -191,10 +191,11 @@ function AllOrders() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="overflow-x-auto hidden md:block">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="bg-gray-50/50 text-gray-500 text-xs font-black uppercase tracking-[0.2em]">
+                      <tr className="bg-gray-50/50 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
                         <th className="px-8 py-6">Order Info</th>
                         <th className="px-8 py-6">Customer</th>
                         <th className="px-8 py-6">Total Amount</th>
@@ -208,7 +209,7 @@ function AllOrders() {
                           <td className="px-8 py-6">
                             <div className="flex flex-col">
                               <span className="font-mono text-xs font-bold text-gray-400 mb-1">#{order._id.slice(-8).toUpperCase()}</span>
-                              <span className="text-xs font-medium text-gray-500">
+                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                                 {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </span>
                             </div>
@@ -216,7 +217,7 @@ function AllOrders() {
                           <td className="px-8 py-6">
                             <div className="flex flex-col">
                               <span className="font-bold text-gray-900">{order.user?.name || "Guest"}</span>
-                              <span className="text-xs text-gray-500">{order.user?.email}</span>
+                              <span className="text-xs text-gray-500 font-medium">{order.user?.email}</span>
                             </div>
                           </td>
                           <td className="px-8 py-6">
@@ -226,7 +227,7 @@ function AllOrders() {
                             <div className="relative flex items-center justify-center status-dropdown">
                               <button
                                 onClick={() => setOpenStatusId(openStatusId === order._id ? null : order._id)}
-                                className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${getStatusStyle(order.orderStatus)}`}
+                                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${getStatusStyle(order.orderStatus)}`}
                               >
                                 {order.orderStatus}
                                 <FiMoreVertical className="text-[10px]" />
@@ -253,7 +254,7 @@ function AllOrders() {
                               )}
                             </div>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-6 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Link
                                 href={`/orderdetais/${order._id}`}
@@ -277,32 +278,93 @@ function AllOrders() {
                   </table>
                 </div>
 
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {filteredOrders.map((order) => (
+                    <div key={order._id} className="p-6 hover:bg-gray-50/50 transition-colors">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex flex-col">
+                          <span className="font-mono text-xs font-bold text-gray-400">#{order._id.slice(-8).toUpperCase()}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                            {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        <div className="relative status-dropdown">
+                          <button
+                            onClick={() => setOpenStatusId(openStatusId === order._id ? null : order._id)}
+                            className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border flex items-center gap-1.5 ${getStatusStyle(order.orderStatus)}`}
+                          >
+                            {order.orderStatus}
+                            <FiMoreVertical size={10} />
+                          </button>
+                          {openStatusId === order._id && (
+                            <div className="absolute right-0 top-full mt-2 w-36 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50">
+                              {["Processing", "Shipped", "Delivered"].map((status) => (
+                                <button
+                                  key={status}
+                                  onClick={() => {
+                                    handleUpdateStatus(order._id, status);
+                                    setOpenStatusId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left hover:bg-gray-50"
+                                >
+                                  <span className={`block w-full text-center py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusStyle(status)}`}>
+                                    {status}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="font-bold text-gray-900">{order.user?.name || "Guest"}</p>
+                        <p className="text-xs text-gray-500 font-medium">{order.user?.email}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <p className="text-lg font-black text-gray-900">₹ {order.totalPrice.toLocaleString()}</p>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/orderdetais/${order._id}`}
+                            className="p-2.5 bg-blue-50 text-blue-600 rounded-xl active:bg-blue-600 active:text-white"
+                          >
+                            <FiEye size={18} />
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteOrder(order._id)}
+                            className="p-2.5 bg-red-50 text-red-600 rounded-xl active:bg-red-600 active:text-white"
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Pagination Controls */}
-                <div className="bg-gray-50/50 border-t border-gray-100 px-8 py-6 flex items-center justify-between">
+                <div className="bg-gray-50/50 border-t border-gray-100 px-6 md:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-6">
                   <button
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold text-sm transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl text-gray-700 font-bold text-sm transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm active:scale-95"
                   >
                     <FiChevronLeft size={18} />
                     <span>Previous</span>
                   </button>
 
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-gray-600">
+                    <span className="text-xs md:text-sm font-bold text-gray-500 uppercase tracking-widest">
                       Page <span className="text-purple-600 font-black">{currentPage}</span> of <span className="text-purple-600 font-black">{totalPages}</span>
                     </span>
-                    {totalOrders > 0 && (
-                      <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                        Total: <span className="font-bold">{totalOrders}</span>
-                      </span>
-                    )}
                   </div>
 
                   <button
                     onClick={handleNextPage}
                     disabled={currentPage >= totalPages}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-gray-700 font-semibold text-sm transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl text-gray-700 font-bold text-sm transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-sm active:scale-95"
                   >
                     <span>Next</span>
                     <FiChevronRight size={18} />

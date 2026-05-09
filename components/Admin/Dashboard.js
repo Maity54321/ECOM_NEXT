@@ -111,9 +111,9 @@ function Dashboard() {
       <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
         <div className="max-w-7xl mx-auto">
           {/* Dashboard Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+          <div className="flex flex-col items-center text-center md:flex-row md:items-center md:text-left justify-between gap-6 mb-10">
             <div>
-              <h1 className="text-3xl mt-3 font-extrabold text-gray-900 tracking-tight">Dashboard Overview</h1>
+              <h1 className="text-3xl mt-7 font-extrabold text-gray-900 tracking-tight">Dashboard Overview</h1>
               <p className="text-gray-500 mt-2 text-lg">Detailed insights and recent activity for your store.</p>
             </div>
             <div className="flex gap-3">
@@ -127,7 +127,7 @@ function Dashboard() {
           </div>
 
           {/* Statistics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-10">
             {[
               { label: "Total Products", value: stats.totalProducts, icon: FiBox, color: "text-blue-600", bg: "bg-blue-50" },
               { label: "Total Revenue", value: `₹ ${stats.totalValue.toLocaleString()}`, icon: FiTrendingUp, color: "text-green-600", bg: "bg-green-50" },
@@ -135,18 +135,18 @@ function Dashboard() {
               { label: "Out of Stock", value: stats.outOfStock, icon: FiXCircle, color: "text-red-600", bg: "bg-red-50" },
               { label: "Categories", value: stats.categories, icon: FiTag, color: "text-purple-600", bg: "bg-purple-50" },
             ].map((stat, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
-                <div className="flex items-center justify-between">
+              <div key={idx} className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
                     {statsLoading ? (
-                      <div className="h-8 w-24 bg-gray-200 rounded-lg animate-pulse mt-1"></div>
+                      <div className="h-6 md:h-8 w-16 md:w-24 bg-gray-200 rounded-lg animate-pulse mt-1"></div>
                     ) : (
-                      <p className="text-xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                      <p className="text-lg md:text-xl font-black text-gray-900 mt-0.5 md:mt-1 truncate">{stat.value}</p>
                     )}
                   </div>
-                  <div className={`p-3 ${stat.bg} ${stat.color} rounded-xl group-hover:scale-110 transition-transform`}>
-                    <stat.icon size={24} />
+                  <div className={`p-2.5 md:p-3 w-fit ${stat.bg} ${stat.color} rounded-xl group-hover:scale-110 transition-transform`}>
+                    <stat.icon size={20} className="md:w-6 md:h-6" />
                   </div>
                 </div>
               </div>
@@ -169,9 +169,9 @@ function Dashboard() {
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto hidden md:block">
                   <table className="w-full">
-                    <thead className="bg-gray-50/50 text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                    <thead className="bg-gray-50/50 text-gray-500 text-[10px] font-black uppercase tracking-[0.2em]">
                       <tr>
                         <th className="px-8 py-4 text-left">Order ID</th>
                         <th className="px-8 py-4 text-left">Customer</th>
@@ -194,15 +194,15 @@ function Dashboard() {
                       ) : (
                         recentOrders.map((order) => (
                           <tr key={order._id} className="hover:bg-gray-50/50 transition-colors group">
-                            <td className="px-8 py-5 font-mono text-sm text-gray-600">#{order._id.slice(-8).toUpperCase()}</td>
+                            <td className="px-8 py-5 font-mono text-xs font-bold text-gray-400">#{order._id.slice(-8).toUpperCase()}</td>
                             <td className="px-8 py-5 font-bold text-gray-900">{order.user?.name || "Guest"}</td>
-                            <td className="px-8 py-5 text-center font-semibold text-gray-900">₹ {order.totalPrice.toLocaleString()}</td>
+                            <td className="px-8 py-5 text-center font-black text-gray-900">₹ {order.totalPrice.toLocaleString()}</td>
                             <td className="px-8 py-5 text-center">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus)}`}>
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(order.orderStatus)}`}>
                                 {order.orderStatus}
                               </span>
                             </td>
-                            <td className="px-8 py-5 text-right text-sm text-gray-500">
+                            <td className="px-8 py-5 text-right text-xs font-bold text-gray-400">
                               {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                             </td>
                           </tr>
@@ -210,6 +210,42 @@ function Dashboard() {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Orders View */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {ordersLoading ? (
+                    [...Array(3)].map((_, i) => (
+                      <div key={i} className="p-6 animate-pulse">
+                        <div className="flex justify-between mb-4">
+                          <div className="h-4 w-20 bg-gray-100 rounded"></div>
+                          <div className="h-6 w-16 bg-gray-100 rounded-full"></div>
+                        </div>
+                        <div className="h-4 w-32 bg-gray-100 rounded mb-2"></div>
+                        <div className="h-4 w-24 bg-gray-100 rounded"></div>
+                      </div>
+                    ))
+                  ) : (
+                    recentOrders.map((order) => (
+                      <div key={order._id} className="p-6 hover:bg-gray-50/50 transition-colors">
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="font-mono text-xs font-bold text-gray-400">#{order._id.slice(-8).toUpperCase()}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusColor(order.orderStatus)}`}>
+                            {order.orderStatus}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <p className="font-bold text-gray-900 text-sm">{order.user?.name || "Guest"}</p>
+                            <p className="text-[10px] font-bold text-gray-400 mt-1">
+                              {new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <p className="font-black text-gray-900">₹ {order.totalPrice.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
